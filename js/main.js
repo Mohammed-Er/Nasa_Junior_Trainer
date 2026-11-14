@@ -1,6 +1,7 @@
 /**
  * ARES: The Last Signal - Master Application Orchestrator
- * Stages 1 through 5: Welcome, Briefing, HUD, Dynamic Event Cards & Engine Integration
+ * Stages 1 through 6: Welcome, Briefing, HUD, Daily Crew Dispatch,
+ * Event Decisions, and Dedicated Outcome Screen.
  */
 
 import { TAG_DEFINITIONS, FICTIONAL_DISCLAIMER, SOURCES } from "../data/sources.js";
@@ -9,6 +10,7 @@ import { GAME_CONSTANTS } from "./constants.js";
 import { createInitialState, saveGameState, loadGameState, clearSavedGame } from "./gameState.js";
 import { applyChoice, advanceSol } from "./gameEngine.js";
 import { EVENTS_DATA } from "../data/eventsData.js";
+import { CAMPAIGN_BEATS } from "../data/campaign.js";
 
 // Master In-Memory State
 let state = null;
@@ -19,6 +21,7 @@ let selectedChoiceId = null;
 const screenWelcome = document.getElementById("screen-welcome");
 const screenBriefing = document.getElementById("screen-briefing");
 const screenGame = document.getElementById("screen-game");
+const screenOutcome = document.getElementById("screen-outcome");
 
 // Navigation & Header Elements
 const btnStartMission = document.getElementById("btn-start-mission");
@@ -66,6 +69,31 @@ const gaugeRadiation = document.getElementById("gauge-radiation");
 const resourceAuditFeed = document.getElementById("resource-audit-feed");
 const logTimeline = document.querySelector(".log-timeline");
 
+// Outcome Screen Elements
+const outcomeSolBadge = document.getElementById("outcome-sol-badge");
+const outcomeEventTitle = document.getElementById("outcome-event-title");
+const outcomeChoiceLabel = document.getElementById("outcome-choice-label");
+const outcomeNarrativeText = document.getElementById("outcome-narrative-text");
+
+const outcomeDeltaPower = document.getElementById("outcome-delta-power");
+const outcomeBeforePower = document.getElementById("outcome-before-power");
+const outcomeAfterPower = document.getElementById("outcome-after-power");
+
+const outcomeDeltaLs = document.getElementById("outcome-delta-ls");
+const outcomeBeforeLs = document.getElementById("outcome-before-ls");
+const outcomeAfterLs = document.getElementById("outcome-after-ls");
+
+const outcomeDeltaRad = document.getElementById("outcome-delta-rad");
+const outcomeBeforeRad = document.getElementById("outcome-before-rad");
+const outcomeAfterRad = document.getElementById("outcome-after-rad");
+
+const outcomeCrewName = document.getElementById("outcome-crew-name");
+const outcomeCrewRole = document.getElementById("outcome-crew-role");
+const outcomeCrewQuote = document.getElementById("outcome-crew-quote");
+const outcomeScienceTag = document.getElementById("outcome-science-tag");
+const outcomeScienceText = document.getElementById("outcome-science-text");
+const btnOutcomeContinue = document.getElementById("btn-outcome-continue");
+
 // Modal Elements: About & Sources
 const btnAbout = document.getElementById("btn-about");
 const modalAbout = document.getElementById("modal-about");
@@ -81,16 +109,16 @@ const btnCloseRestart = document.getElementById("btn-close-restart");
 const btnCancelRestart = document.getElementById("btn-cancel-restart");
 const btnConfirmRestart = document.getElementById("btn-confirm-restart");
 
-// Crew Container
+// Crew Dossier Container
 const crewDossierGrid = document.getElementById("crew-dossier-grid");
 
 let lastFocusedElement = null;
 
 /**
- * Screen Navigator - Switches between major screens
+ * Screen Navigator - Transitions between major screens
  */
 function showScreen(screenId) {
-  const allScreens = [screenWelcome, screenBriefing, screenGame];
+  const allScreens = [screenWelcome, screenBriefing, screenGame, screenOutcome];
   allScreens.forEach((screen) => {
     if (screen) {
       screen.classList.remove("active");
@@ -288,26 +316,22 @@ function syncUIWithState() {
 
 /**
  * Render Immediate Delta Pills on Decision Cards
- * Rule: Only immediate costs are displayed; flags, pending effects, and modifiers remain concealed.
  */
 function renderDeltaPills(deltas) {
   const pills = [];
 
-  // Power Pill
   if (deltas.power > 0) {
     pills.push(`<span class="delta-pill pos">⚡ +${deltas.power}% Power</span>`);
   } else if (deltas.power < 0) {
     pills.push(`<span class="delta-pill neg">⚡ ${deltas.power}% Power</span>`);
   }
 
-  // Life Support Pill
   if (deltas.lifeSupport > 0) {
     pills.push(`<span class="delta-pill pos">🌿 +${deltas.lifeSupport}% Life Support</span>`);
   } else if (deltas.lifeSupport < 0) {
     pills.push(`<span class="delta-pill neg">🌿 ${deltas.lifeSupport}% Life Support</span>`);
   }
 
-  // Radiation Safety Pill
   if (deltas.radiationSafety > 0) {
     pills.push(`<span class="delta-pill pos">🛡️ +${deltas.radiationSafety}% Rad Safety</span>`);
   } else if (deltas.radiationSafety < 0) {
@@ -322,65 +346,88 @@ function renderDeltaPills(deltas) {
 }
 
 /**
- * Stage 4: Render Interactive Mission Event & Decision Cards
+ * Render Current Sol View (Routine Briefing vs Major Event)
  */
-function renderMissionEvent(eventData) {
-  if (!missionEventContainer || !eventData) return;
-  currentEvent = eventData;
+function renderSolView() {
+  if (!missionEventContainer || !state) return;
 
-  // If already resolved and awaiting next sol
-  if (!state.awaitingDecision && state.lastResolution) {
-    const res = state.lastResolution;
+  const currentBeat = CAMPAIGN_BEATS[state.sol];
+
+  // If this is a Routine Day (NO decision required: every 3-4 days an event happens)
+  if (!currentBeat || !currentBeat.hasDecision) {
+    selectedChoiceId = null;
+    currentEvent = null;
+    state.awaitingDecision = false;
+
+    const beat = currentBeat || {
+      sol: state.sol,
+      title: "Outpost Daily Maintenance",
+      crewSpeaker: "Marcus Vance",
+      crewRole: "Systems Engineer",
+      crewDialogue: "Power grids and life-support loops checked out clean this morning. Continuing scheduled duties.",
+      habitatStatus: "All modules nominal. Pressurization stable.",
+      crewMood: "Steady & Operational"
+    };
+
     missionEventContainer.innerHTML = `
-      <section class="decision-section" style="border-color: var(--color-status-optimal);">
+      <section class="decision-section" style="border-color: var(--color-space-medium);">
         <div class="decision-section-header">
-          <span class="decision-directive-tag" style="color: var(--color-status-optimal);">
-            COMMAND ORDER EXECUTED // SOL ${state.sol < 10 ? "0" + state.sol : state.sol}
-          </span>
-          <h3 class="decision-section-title">${eventData.title}</h3>
-          <p class="decision-section-intro">${res.narrativeOutcome}</p>
-        </div>
-
-        <!-- Crew Reaction Bubble -->
-        <div class="crew-speech-bubble" style="margin: 0.5rem 0;">
-          <strong>${res.crewReaction.speaker} (${res.crewReaction.role}):</strong> "${res.crewReaction.text}"
-        </div>
-
-        <!-- Science Explanation Card -->
-        <div class="tag-legend-item" style="border-left-color: var(--color-mars-orange);">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap: 0.5rem; flex-wrap:wrap;">
-            <strong style="color:var(--color-text-primary); font-size:0.95rem;">Mission Science Telemetry</strong>
-            <span class="tag tag-science">[${res.science.typeTag.toUpperCase().replace("_", " ")}]</span>
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <span class="decision-directive-tag" style="color:var(--color-text-secondary);">
+              DAILY OUTPOST LOG // SOL ${state.sol < 10 ? "0" + state.sol : state.sol}
+            </span>
+            <span class="tag tag-optimal">[CREW MOOD: ${beat.crewMood}]</span>
           </div>
-          <p class="tag-legend-desc" style="color:#D1DCE5;">${res.science.text}</p>
+          <h3 class="decision-section-title">${beat.title}</h3>
+          <p class="decision-section-intro">${beat.habitatStatus}</p>
         </div>
+
+        <!-- Daily Crew Dispatch Bubble -->
+        <article class="crew-speech-card" style="margin: 0.5rem 0;">
+          <div class="crew-speech-avatar" aria-hidden="true" style="border-color: var(--color-space-medium); color: var(--color-mars-orange);">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+          <div class="crew-speech-content">
+            <div class="crew-speech-author">
+              <span class="crew-speech-name">${beat.crewSpeaker}</span>
+              <span class="crew-speech-role">${beat.crewRole}</span>
+            </div>
+            <p class="crew-speech-bubble">"${beat.crewDialogue}"</p>
+          </div>
+        </article>
 
         <div class="decision-confirm-bar">
-          <span class="decision-selection-note">Order confirmed and logged. Outpost ready for overnight transition.</span>
-          <button id="btn-advance-sol" class="btn btn-primary" type="button">
-            Advance to Sol ${state.sol + 1 < 10 ? "0" + (state.sol + 1) : state.sol + 1} &rarr;
+          <span class="decision-selection-note">Daily checks completed. No immediate operational emergency reported.</span>
+          <button id="btn-advance-routine" class="btn btn-primary" type="button">
+            Acknowledge &amp; Advance to Sol ${state.sol + 1 < 10 ? "0" + (state.sol + 1) : state.sol + 1} &rarr;
           </button>
         </div>
       </section>
     `;
 
-    document.getElementById("btn-advance-sol")?.addEventListener("click", () => {
+    document.getElementById("btn-advance-routine")?.addEventListener("click", () => {
       advanceSol(state);
-      // Reset for testing next interaction or keep state active
-      state.awaitingDecision = true;
-      saveGameState(state);
       syncUIWithState();
-      renderMissionEvent(EVENTS_DATA["evt_solar_dust"]);
+      renderSolView();
     });
 
     return;
   }
 
-  // Active Decision Selection UI
+  // If this IS an Event Sol (e.g. Sol 3, Sol 6, Sol 8)
+  const eventData = EVENTS_DATA[currentBeat.eventId];
+  if (!eventData) return;
+
+  currentEvent = eventData;
+  state.awaitingDecision = true;
+
   missionEventContainer.innerHTML = `
     <section class="decision-section" aria-labelledby="decision-title">
       <div class="decision-section-header">
-        <span class="decision-directive-tag">COMMAND DIRECTIVE REQUIRED // ARES-1</span>
+        <span class="decision-directive-tag">COMMAND DIRECTIVE REQUIRED // SOL ${state.sol < 10 ? "0" + state.sol : state.sol}</span>
         <h3 id="decision-title" class="decision-section-title">${eventData.title}</h3>
         <p class="decision-section-intro">${eventData.intro}</p>
       </div>
@@ -405,7 +452,7 @@ function renderMissionEvent(eventData) {
               </div>
             </div>
             
-            <!-- Immediate Cost Badges (Flags and pending effects strictly concealed) -->
+            <!-- Immediate Cost Badges -->
             <div class="decision-card-deltas">
               ${renderDeltaPills(choice.deltas)}
             </div>
@@ -420,7 +467,7 @@ function renderMissionEvent(eventData) {
             ? `Selected: <strong>${eventData.choices.find(c => c.id === selectedChoiceId)?.label}</strong>` 
             : `Select an order above to review its trade-offs.`}
         </div>
-        <button id="btn-confirm-decision" class="btn btn-primary" type="button" ${!selectedChoiceId || !state.awaitingDecision ? "disabled" : ""}>
+        <button id="btn-confirm-decision" class="btn btn-primary" type="button" ${!selectedChoiceId ? "disabled" : ""}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <polyline points="20 6 9 17 4 12"></polyline>
           </svg>
@@ -445,7 +492,7 @@ function renderMissionEvent(eventData) {
       card.setAttribute("aria-checked", "true");
 
       const confirmBtn = document.getElementById("btn-confirm-decision");
-      if (confirmBtn && state.awaitingDecision) {
+      if (confirmBtn) {
         confirmBtn.removeAttribute("disabled");
       }
       const noteEl = missionEventContainer.querySelector(".decision-selection-note");
@@ -464,7 +511,7 @@ function renderMissionEvent(eventData) {
     });
   });
 
-  // Attach Confirmation Action
+  // Attach Confirmation Action -> Opens Stage 6 Outcome Screen!
   const btnConfirm = document.getElementById("btn-confirm-decision");
   btnConfirm?.addEventListener("click", () => {
     if (!selectedChoiceId || !state.awaitingDecision) return;
@@ -473,12 +520,75 @@ function renderMissionEvent(eventData) {
     if (!choice) return;
 
     // Apply decision through gameEngine
-    applyChoice(state, choice, eventData);
+    const resolution = applyChoice(state, choice, eventData);
 
-    // Synchronize UI gauges, log, and switch to resolved view
-    syncUIWithState();
-    renderMissionEvent(eventData);
+    // Open Screen 5: Dedicated Outcome Screen
+    showOutcomeScreen(resolution, eventData);
   });
+}
+
+/**
+ * Stage 6: Dedicated Decision Outcome Screen Controller
+ */
+function showOutcomeScreen(resolution, eventData) {
+  if (!resolution) return;
+
+  // Header & Narrative
+  if (outcomeSolBadge) {
+    outcomeSolBadge.textContent = `Sol ${state.sol < 10 ? "0" + state.sol : state.sol} Command Order Executed`;
+  }
+  if (outcomeEventTitle) {
+    outcomeEventTitle.textContent = eventData.title;
+  }
+  if (outcomeChoiceLabel) {
+    outcomeChoiceLabel.textContent = `Order: ${resolution.choiceLabel}`;
+  }
+  if (outcomeNarrativeText) {
+    outcomeNarrativeText.textContent = resolution.narrativeOutcome;
+  }
+
+  // Exact Before-and-After Resource Changes
+  const formatDelta = (delta, el) => {
+    if (!el) return;
+    if (delta > 0) {
+      el.className = "delta-pill pos";
+      el.textContent = `+${delta}%`;
+    } else if (delta < 0) {
+      el.className = "delta-pill neg";
+      el.textContent = `${delta}%`;
+    } else {
+      el.className = "delta-pill neutral";
+      el.textContent = "0%";
+    }
+  };
+
+  formatDelta(resolution.appliedDeltas.power, outcomeDeltaPower);
+  if (outcomeBeforePower) outcomeBeforePower.textContent = `${resolution.before.power}%`;
+  if (outcomeAfterPower) outcomeAfterPower.textContent = `${resolution.after.power}%`;
+
+  formatDelta(resolution.appliedDeltas.lifeSupport, outcomeDeltaLs);
+  if (outcomeBeforeLs) outcomeBeforeLs.textContent = `${resolution.before.lifeSupport}%`;
+  if (outcomeAfterLs) outcomeAfterLs.textContent = `${resolution.after.lifeSupport}%`;
+
+  formatDelta(resolution.appliedDeltas.radiationSafety, outcomeDeltaRad);
+  if (outcomeBeforeRad) outcomeBeforeRad.textContent = `${resolution.before.radiationSafety}%`;
+  if (outcomeAfterRad) outcomeAfterRad.textContent = `${resolution.after.radiationSafety}%`;
+
+  // Crew Reaction
+  if (outcomeCrewName) outcomeCrewName.textContent = resolution.crewReaction.speaker;
+  if (outcomeCrewRole) outcomeCrewRole.textContent = resolution.crewReaction.role;
+  if (outcomeCrewQuote) outcomeCrewQuote.textContent = `"${resolution.crewReaction.text}"`;
+
+  // Scientific Telemetry Blurb
+  if (outcomeScienceTag) {
+    outcomeScienceTag.textContent = `[${resolution.science.typeTag.toUpperCase().replace("_", " ")}]`;
+  }
+  if (outcomeScienceText) {
+    outcomeScienceText.textContent = resolution.science.text;
+  }
+
+  // Show the Screen
+  showScreen("screen-outcome");
 }
 
 /**
@@ -489,17 +599,26 @@ function setupEventListeners() {
   btnBriefingBack?.addEventListener("click", () => showScreen("screen-welcome"));
   btnBeginMission?.addEventListener("click", () => {
     state.status = "active";
-    state.awaitingDecision = true;
     saveGameState(state);
     showScreen("screen-game");
     switchTab("mission");
     syncUIWithState();
-    renderMissionEvent(EVENTS_DATA["evt_solar_dust"]);
+    renderSolView();
   });
 
   tabBtns.mission?.addEventListener("click", () => switchTab("mission"));
   tabBtns.resources?.addEventListener("click", () => switchTab("resources"));
   tabBtns.log?.addEventListener("click", () => switchTab("log"));
+
+  // Outcome Screen Continue Action -> Advances Sol & returns to Mission Tab
+  btnOutcomeContinue?.addEventListener("click", () => {
+    advanceSol(state);
+    selectedChoiceId = null;
+    showScreen("screen-game");
+    switchTab("mission");
+    syncUIWithState();
+    renderSolView();
+  });
 
   btnAbout?.addEventListener("click", () => openModal(modalAbout, btnCloseModal));
   btnCloseModal?.addEventListener("click", () => closeModal(modalAbout));
@@ -595,7 +714,6 @@ function initAboutModalContent() {
  * Bootstrap Application
  */
 function init() {
-  // Load or create state
   state = loadGameState();
   if (!state) {
     state = createInitialState();
@@ -605,18 +723,18 @@ function init() {
   initAboutModalContent();
   setupEventListeners();
 
-  // Restore screen if mid-campaign
+  // Screen restoration
   if (state.status === "active") {
     showScreen("screen-game");
     switchTab(state.currentTab || "mission");
     syncUIWithState();
-    renderMissionEvent(EVENTS_DATA["evt_solar_dust"]);
+    renderSolView();
   } else {
     showScreen("screen-welcome");
     syncUIWithState();
   }
 
-  console.log("ARES: The Last Signal initialized (Stages 1 through 5 active). State:", state);
+  console.log("ARES initialized (Sols 1–8 Vertical Slice + Dedicated Outcome Screen).");
 }
 
 if (document.readyState === "loading") {

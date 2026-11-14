@@ -472,6 +472,132 @@
     </section>
 
     <!-- ====================================================================
+         SCREEN 5: DEDICATED DECISION OUTCOME SCREEN (Stage 6)
+         ==================================================================== -->
+    <section id="screen-outcome" class="screen" aria-label="Decision Outcome Report" hidden>
+      <div class="briefing-container">
+        <!-- Outcome Header -->
+        <header class="briefing-header">
+          <div class="mission-badge" style="align-self: flex-start; border-color: rgba(39, 174, 96, 0.4); color: var(--color-status-optimal);">
+            <span class="mission-badge-dot" style="background-color: var(--color-status-optimal);"></span>
+            <span id="outcome-sol-badge">Sol 03 Command Order Executed</span>
+          </div>
+          <h2 id="outcome-event-title">The Mysterious Solar Panel Miracle</h2>
+          <p id="outcome-choice-label" style="color: var(--color-mars-orange);">Order: Inspect Array Mechanisms</p>
+        </header>
+
+        <!-- What Happened Narrative Card -->
+        <article class="briefing-story-card">
+          <h3>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-mars-orange)" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 14 14"></polyline>
+            </svg>
+            Operational Result: What Happened
+          </h3>
+          <p id="outcome-narrative-text">
+            Diagnostic telemetry revealed exactly how Martian wind vortexes dislodge electrostatically charged dust.
+          </p>
+        </article>
+
+        <!-- Exact Before-and-After Resource Changes Section -->
+        <div>
+          <h3 class="briefing-section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="18" y1="20" x2="18" y2="10"></line>
+              <line x1="12" y1="20" x2="12" y2="4"></line>
+              <line x1="6" y1="20" x2="6" y2="14"></line>
+            </svg>
+            Verified Outpost Resource Changes
+          </h3>
+          <p class="briefing-section-desc">Before-and-after values calculated directly from outpost telemetry:</p>
+
+          <div class="systems-grid">
+            <!-- Power Transition Card -->
+            <div class="system-card">
+              <div class="system-card-header">
+                <span class="system-title"><span style="color:#F39C12;">⚡</span> Electrical Power</span>
+                <span id="outcome-delta-power" class="delta-pill neutral">0%</span>
+              </div>
+              <div style="display:flex; align-items:baseline; gap:0.6rem; font-family:var(--font-family-mono); font-size:1.35rem; font-weight:800; color:var(--color-text-primary); margin:0.4rem 0;">
+                <span id="outcome-before-power" style="color:var(--color-text-secondary); text-decoration:line-through; font-size:1.1rem;">85%</span>
+                <span style="color:var(--color-mars-orange); font-size:1rem;">&rarr;</span>
+                <span id="outcome-after-power">80%</span>
+              </div>
+              <p style="font-size:0.8rem; color:var(--color-text-dim);">Photovoltaic field generation &amp; battery reserves.</p>
+            </div>
+
+            <!-- Life Support Transition Card -->
+            <div class="system-card">
+              <div class="system-card-header">
+                <span class="system-title"><span style="color:#27AE60;">🌿</span> Life Support</span>
+                <span id="outcome-delta-ls" class="delta-pill neutral">0%</span>
+              </div>
+              <div style="display:flex; align-items:baseline; gap:0.6rem; font-family:var(--font-family-mono); font-size:1.35rem; font-weight:800; color:var(--color-text-primary); margin:0.4rem 0;">
+                <span id="outcome-before-ls" style="color:var(--color-text-secondary); text-decoration:line-through; font-size:1.1rem;">85%</span>
+                <span style="color:var(--color-mars-orange); font-size:1rem;">&rarr;</span>
+                <span id="outcome-after-ls">85%</span>
+              </div>
+              <p style="font-size:0.8rem; color:var(--color-text-dim);">Oxygen scrubbers, water recycling &amp; cabin pressure.</p>
+            </div>
+
+            <!-- Radiation Safety Transition Card -->
+            <div class="system-card">
+              <div class="system-card-header">
+                <span class="system-title"><span style="color:#3498DB;">🛡️</span> Radiation Safety</span>
+                <span id="outcome-delta-rad" class="delta-pill neutral">0%</span>
+              </div>
+              <div style="display:flex; align-items:baseline; gap:0.6rem; font-family:var(--font-family-mono); font-size:1.35rem; font-weight:800; color:var(--color-text-primary); margin:0.4rem 0;">
+                <span id="outcome-before-rad" style="color:var(--color-text-secondary); text-decoration:line-through; font-size:1.1rem;">80%</span>
+                <span style="color:var(--color-mars-orange); font-size:1rem;">&rarr;</span>
+                <span id="outcome-after-rad">80%</span>
+              </div>
+              <p style="font-size:0.8rem; color:var(--color-text-dim);">Regolith berms &amp; storm shelter readiness.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Crew Reaction Card -->
+        <article class="crew-speech-card">
+          <div class="crew-speech-avatar" style="border-color:var(--color-mars-orange);" aria-hidden="true">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+          </div>
+          <div class="crew-speech-content">
+            <div class="crew-speech-author">
+              <span id="outcome-crew-name" class="crew-speech-name">Dr. Tariq Al-Mansoor</span>
+              <span id="outcome-crew-role" class="crew-speech-role">Mission Scientist</span>
+            </div>
+            <p id="outcome-crew-quote" class="crew-speech-bubble">
+              "Fascinating data! The vortex removed fine dust without scratching the anti-reflective silica coating."
+            </p>
+          </div>
+        </article>
+
+        <!-- Scientific Telemetry Blurb -->
+        <div class="tag-legend-item" style="border-left-color: var(--color-mars-orange); padding:1.25rem;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; flex-wrap:wrap; margin-bottom:0.4rem;">
+            <strong style="color:var(--color-text-primary); font-size:1rem;">Mission Scientist Educational Note</strong>
+            <span id="outcome-science-tag" class="tag tag-science">[SCIENTIFIC EXPLANATION]</span>
+          </div>
+          <p id="outcome-science-text" style="color:#D1DCE5; font-size:0.95rem; line-height:1.5;">
+            Martian dust particles are fine, jagged, and electrostatically charged. Understanding how surface winds dislodge them is crucial for long-duration solar array maintenance.
+          </p>
+        </div>
+
+        <!-- Continue Button -->
+        <footer class="briefing-actions" style="justify-content: flex-end;">
+          <button id="btn-outcome-continue" class="btn btn-primary btn-lg" type="button">
+            Continue Mission &rarr;
+          </button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ====================================================================
          ACCESSIBLE MODAL: MISSION ABOUT & NASA SOURCES (Stage 1)
          ==================================================================== -->
     <div id="modal-about" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-about-title" hidden>
