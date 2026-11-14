@@ -6,6 +6,8 @@
  */
 
 import { GAME_CONSTANTS } from "./constants.js";
+import { buildEventSchedule } from "./eventScheduler.js";
+import { COMM_MESSAGES } from "../data/commData.js";
 
 /**
  * Extract seed from URL query (?seed=12345) or generate a clean 32-bit integer
@@ -68,16 +70,17 @@ export function createInitialState(customSeed = null) {
     // Decision Memory Flags
     flags: {},
 
-    // Scheduled Events Map: Sol -> Event ID
-    eventSchedule: {},
+    // Scheduled Events Map: Sol -> Event ID (Deterministic seeded allocation)
+    eventSchedule: buildEventSchedule(seed),
 
     // Active Delayed & Ongoing Mechanics
     pendingEffects: [],               // Delayed effects with triggerSol <= 29
     modifiers: [],                    // Ongoing per-sol modifiers
 
     // Communication Queues
-    commQueue: [],
+    commQueue: COMM_MESSAGES.map((m) => ({ ...m })),
     commHistory: [],
+    latestComm: null,
 
     // Audits & Outcome Snapshot
     recentChanges: [
