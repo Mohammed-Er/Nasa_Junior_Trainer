@@ -308,12 +308,15 @@
             </div>
           </div>
 
-          <!-- Stage 4 Preview Placeholder -->
-          <div class="stage4-preview-card">
-            <h4>Stage 4 &amp; 5: Story Decisions &amp; Resource Engine</h4>
-            <p>
-              In Stage 4, this space will display daily story events, crew deliberations, and interactive decision cards with genuine trade-offs. Check the <strong>Resources</strong> and <strong>Mission Log</strong> tabs to inspect live outpost telemetry!
-            </p>
+          <!-- Overnight Report Box (Shown when advancing sols) -->
+          <div id="overnight-report-box" class="overnight-report-card" hidden>
+            <span class="overnight-report-title">Overnight Systems Telemetry Report</span>
+            <ul id="overnight-report-list" class="overnight-report-list"></ul>
+          </div>
+
+          <!-- Dynamic Mission Event & Decision Cards Container -->
+          <div id="mission-event-container">
+            <!-- Dynamically populated from data/eventsData.js -->
           </div>
         </div>
       </section>

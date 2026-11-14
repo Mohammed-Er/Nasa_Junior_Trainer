@@ -797,3 +797,243 @@
   color: var(--color-text-secondary);
   line-height: 1.5;
 }
+
+
+/* ==========================================================================
+   STAGE 4 COMPONENTS: DECISION CARDS & EVENT INTERACTION
+   ========================================================================== */
+
+.decision-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  background-color: rgba(7, 20, 38, 0.6);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-panel);
+}
+
+.decision-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.decision-directive-tag {
+  align-self: flex-start;
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-mars-orange);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.decision-section-title {
+  font-size: 1.35rem;
+  color: var(--color-text-primary);
+  font-weight: 800;
+}
+
+.decision-section-intro {
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+/* Decision Cards Grid */
+.decision-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+/* Individual Interactive Decision Card */
+.decision-card {
+  background-color: var(--color-space-dark);
+  border: 2px solid var(--color-space-medium);
+  border-radius: var(--radius-lg);
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  position: relative;
+  user-select: none;
+}
+
+.decision-card:hover {
+  border-color: var(--color-mars-orange);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.decision-card:focus-visible {
+  outline: 2px solid var(--color-mars-orange);
+  outline-offset: 2px;
+}
+
+.decision-card.selected {
+  border-color: var(--color-mars-orange);
+  background: linear-gradient(180deg, rgba(198, 90, 53, 0.12) 0%, rgba(11, 31, 53, 0.95) 100%);
+  box-shadow: 0 0 20px rgba(225, 122, 67, 0.35);
+}
+
+.decision-card-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.decision-card-badge-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.decision-card-badge {
+  font-family: var(--font-family-mono);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-text-dim);
+}
+
+.decision-card-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--color-space-medium);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  color: transparent;
+  transition: all var(--transition-fast);
+}
+
+.decision-card.selected .decision-card-check {
+  border-color: var(--color-mars-orange);
+  background-color: var(--color-mars-orange);
+  color: #FFFFFF;
+}
+
+.decision-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.35;
+}
+
+.decision-card-preview {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.decision-card-tradeoff {
+  font-size: 0.825rem;
+  color: #D1DCE5;
+  background-color: rgba(7, 20, 38, 0.6);
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-mars-rust);
+  line-height: 1.45;
+}
+
+/* Immediate Resource Impacts (Deltas) */
+.decision-card-deltas {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  padding-top: 0.5rem;
+  border-top: 1px solid rgba(23, 59, 94, 0.3);
+}
+
+.delta-pill {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-pill);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.delta-pill.pos {
+  background-color: rgba(39, 174, 96, 0.15);
+  border: 1px solid var(--color-status-optimal);
+  color: #69F0AE;
+}
+
+.delta-pill.neg {
+  background-color: rgba(231, 76, 60, 0.15);
+  border: 1px solid var(--color-status-critical);
+  color: #FF8A80;
+}
+
+.delta-pill.neutral {
+  background-color: rgba(23, 59, 94, 0.25);
+  border: 1px solid var(--color-space-medium);
+  color: var(--color-text-dim);
+}
+
+/* Decision Confirmation Action Bar */
+.decision-confirm-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-space-border);
+  flex-wrap: wrap;
+}
+
+.decision-selection-note {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.decision-selection-note strong {
+  color: var(--color-mars-orange);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none;
+  transform: none !important;
+}
+
+/* Overnight Report Alert Box */
+.overnight-report-card {
+  background-color: rgba(11, 31, 53, 0.8);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.overnight-report-title {
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-mars-orange);
+  text-transform: uppercase;
+}
+
+.overnight-report-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
