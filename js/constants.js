@@ -3,8 +3,8 @@
  */
 
 export const GAME_CONSTANTS = {
-  SAVE_KEY: "ares_mission_save_v1",
-  SAVE_VERSION: 1,
+  SAVE_KEY: "ares_mission_save_v2",
+  SAVE_VERSION: 2,
   TOTAL_SOLS: 30,
 
   STARTING_RESOURCES: {

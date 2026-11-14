@@ -12,10 +12,10 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=SF+Mono:wght@400;600&display=swap" rel="stylesheet">
 
   <!-- Modular CSS Hierarchy -->
-  <link rel="stylesheet" href="css/variables.css">
-  <link rel="stylesheet" href="css/base.css">
-  <link rel="stylesheet" href="css/components.css">
-  <link rel="stylesheet" href="css/screens.css">
+  <link rel="stylesheet" href="css/variables.css?v=2.0">
+  <link rel="stylesheet" href="css/base.css?v=2.0">
+  <link rel="stylesheet" href="css/components.css?v=2.0">
+  <link rel="stylesheet" href="css/screens.css?v=2.0">
 </head>
 <body>
   <main id="app">
@@ -37,7 +37,7 @@
         <header class="welcome-header">
           <div class="mission-badge">
             <span class="mission-badge-dot" aria-hidden="true"></span>
-            <span>ARES-1 Outpost // Sol 01</span>
+            <span>ARES-1 Outpost // Sol 01 · Stages 1–10 Active (DSN Comms, Endings &amp; Triage Ready)</span>
           </div>
           <span class="mission-badge" style="border-color: rgba(39, 174, 96, 0.4); color: var(--color-status-optimal);">
             Outpost Ready
@@ -903,7 +903,7 @@
     <!-- ====================================================================
          DEVELOPER TOOLS OVERLAY (Stage 10 - Gated behind ?dev=1 or '~' key)
          ==================================================================== -->
-    <div id="dev-tools-wrapper" hidden>
+    <div id="dev-tools-wrapper">
       <button id="btn-dev-toggle" class="btn-dev-toggle" type="button" title="Toggle Developer Tools (Hotkey: ~)">
         🛠️ DEV TOOLS
       </button>
@@ -914,6 +914,6 @@
   </main>
 
   <!-- ES6 Main Application Module -->
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=2.0"></script>
 </body>
 </html>

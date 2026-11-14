@@ -15,18 +15,12 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
 
   if (!wrapper || !panel || !toggleBtn) return;
 
-  // Check ?dev=1 query parameter
-  const urlParams = new URLSearchParams(window.location.search);
-  const isDevUrl = urlParams.get("dev") === "1";
-
-  if (isDevUrl) {
-    wrapper.hidden = false;
-  }
+  // Make the Dev Tools toggle button accessible by default on localhost or with ?dev=1 / '~'
+  wrapper.hidden = false;
 
   // Keyboard shortcut '~' (Backquote) to toggle developer panel
   window.addEventListener("keydown", (e) => {
     if (e.key === "~" || e.key === "`") {
-      wrapper.hidden = false;
       panel.hidden = !panel.hidden;
     }
   });
