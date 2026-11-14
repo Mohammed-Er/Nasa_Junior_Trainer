@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARES: The Last Signal | Mars Survival Strategy Game</title>
+  <meta name="description" content="A browser-based, story-driven Mars survival strategy and educational game for the NASA Space Apps Challenge. 30 sols. Four astronauts. One mission to survive.">
+
+  <!-- Inter Font Family from Google Fonts (with system fallbacks) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=SF+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- Modular CSS Hierarchy -->
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/screens.css">
+</head>
+<body>
+  <main id="app">
+    <!-- ====================================================================
+         SCREEN 1: WELCOME / LANDING PAGE (Stage 1)
+         ==================================================================== -->
+    <section id="screen-welcome" class="screen active" aria-label="Welcome to ARES-1">
+      <!-- Atmospheric Mars Glow Backdrop -->
+      <div class="mars-atmosphere-glow" aria-hidden="true"></div>
+
+      <!-- Mars Landscape Vector Artwork (ARES-1 Dome, Solar Arrays & Dunes) -->
+      <div class="mars-landscape-container" aria-hidden="true">
+        <img src="assets/images/mars-landscape.svg" alt="Martian horizon with ARES-1 research habitat dome and solar panel array" class="mars-landscape-svg">
+      </div>
+
+      <!-- Welcome Interactive UI Layer -->
+      <div class="welcome-ui-layer">
+        <!-- Top Mission Header -->
+        <header class="welcome-header">
+          <div class="mission-badge">
+            <span class="mission-badge-dot" aria-hidden="true"></span>
+            <span>ARES-1 Outpost // Sol 01</span>
+          </div>
+          <span class="mission-badge" style="border-color: rgba(39, 174, 96, 0.4); color: var(--color-status-optimal);">
+            Outpost Ready
+          </span>
+        </header>
+
+        <!-- Center Hero Text & Actions -->
+        <div class="welcome-hero">
+          <h1 class="welcome-title">
+            ARES: <span class="welcome-title-signal">The Last Signal</span>
+          </h1>
+          <p class="welcome-subtitle">
+            30 sols. Four astronauts. One mission to survive.
+          </p>
+          <div class="welcome-actions">
+            <button id="btn-start-mission" class="btn btn-primary btn-lg" type="button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Start Mission
+            </button>
+            <button id="btn-about" class="btn btn-secondary btn-lg" type="button">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+              Mission About &amp; Sources
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom Telemetry Banner -->
+        <footer class="welcome-footer">
+          <span class="welcome-footer-tag">NASA SPACE APPS CHALLENGE</span>
+          <span class="welcome-footer-tag">MARS HABITAT RESEARCH CAMPAIGN • SOL 01–30</span>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SCREEN 2: MISSION BRIEFING (Stage 2)
+         ==================================================================== -->
+    <section id="screen-briefing" class="screen" aria-label="Mission Briefing" hidden>
+      <div class="briefing-container">
+        <!-- Briefing Header -->
+        <header class="briefing-header">
+          <div class="mission-badge" style="align-self: flex-start;">
+            <span class="mission-badge-dot" aria-hidden="true"></span>
+            <span>Mission Directive // Sol 01 Briefing</span>
+          </div>
+          <h2>Outpost ARES-1 Emergency Briefing</h2>
+          <p>Autonomous Survival Protocol Engaged</p>
+        </header>
+
+        <!-- Story Situation Card -->
+        <div class="briefing-story-card">
+          <h3>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--color-mars-orange)" aria-hidden="true">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Situation Overview: The Silence from Earth
+          </h3>
+          <p>
+            You are the Commander of <strong>ARES-1</strong>, an experimental four-astronaut research outpost situated in the Martian highlands. At 04:12 UTC, telemetry signals from Earth's orbital relay network suddenly went dead. 
+          </p>
+          <p>
+            An immediate rescue from Earth is impossible—Mars and Earth are tens of millions of kilometers apart. Your core directive is simple yet vital: <strong>keep your crew and habitat functional for 30 Martian days (sols)</strong>, investigate the cause of the blackout, and make the critical decisions necessary to re-establish the link with Earth.
+          </p>
+        </div>
+
+        <!-- Crew Dossier Section -->
+        <div>
+          <h3 class="briefing-section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+            </svg>
+            ARES-1 Four-Astronaut Crew
+          </h3>
+          <p class="briefing-section-desc">Each astronaut brings vital expertise to the mission. Listen to their advice during crises:</p>
+          <div id="crew-dossier-grid" class="crew-grid">
+            <!-- Dynamically populated from data/crew.js -->
+          </div>
+        </div>
+
+        <!-- The Three Core Systems Section -->
+        <div>
+          <h3 class="briefing-section-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+              <polyline points="2 17 12 22 22 17"></polyline>
+              <polyline points="2 12 12 17 22 12"></polyline>
+            </svg>
+            The Three Systems You Must Balance
+          </h3>
+          <p class="briefing-section-desc">Keep these three indicators above zero at all times. Every decision carries real trade-offs:</p>
+          
+          <div class="systems-grid">
+            <!-- 1. Power -->
+            <div class="system-card">
+              <div class="system-card-header">
+                <span class="system-title">
+                  <span style="color:#F39C12;">⚡</span> 1. Power
+                </span>
+                <span class="tag tag-optimal">Grid: 85%</span>
+              </div>
+              <p>Represents electrical energy generated by solar arrays and stored in habitat batteries. Power runs heaters, air scrubbers, diagnostics, and radio transmitters.</p>
+              <div class="system-note">
+                <strong>Trade-off:</strong> Dust accumulation and cold nights drain power quickly.
+              </div>
+            </div>
+
+            <!-- 2. Life Support -->
+            <div class="system-card">
+              <div class="system-card-header">
+                <span class="system-title">
+                  <span style="color:#27AE60;">🌿</span> 2. Life Support
+                </span>
+                <span class="tag tag-optimal">Status: 85%</span>
+              </div>
+              <p>Represents the overall operational health of essential crew support systems. Groups oxygen generation, water recycling, food stores, and cabin thermal regulation into one unified indicator.</p>
+              <div class="system-note">
+                <strong>Science Note:</strong> Oxygen, water, food, and temperature are physically distinct systems, grouped here to keep strategy accessible for young commanders!
+              </div>
+            </div>
+
+            <!-- 3. Radiation Safety -->
+            <div class="system-card">
+              <div class="system-card-header">
+                <span class="system-title">
+                  <span style="color:#3498DB;">🛡️</span> 3. Radiation Safety
+                </span>
+                <span class="tag tag-optimal">Shield: 80%</span>
+              </div>
+              <p>Represents the readiness and integrity of the outpost's protective defenses: regolith surface shielding, airlock decontamination, and underground storm shelter protocols.</p>
+              <div class="system-note">
+                <strong>Protection Note:</strong> This measures habitat defense readiness, not an individual astronaut radiation dose or medical threshold.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Footer -->
+        <footer class="briefing-actions">
+          <button id="btn-briefing-back" class="btn btn-secondary" type="button">
+            &larr; Return to Welcome Page
+          </button>
+          <button id="btn-begin-mission" class="btn btn-primary btn-lg" type="button">
+            Begin Mission: Enter Sol 01 &rarr;
+          </button>
+        </footer>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SCREEN 3: MAIN GAME INTERFACE (Stage 3)
+         ==================================================================== -->
+    <section id="screen-game" class="screen" aria-label="ARES-1 Command Center" hidden>
+      <!-- Persistent HUD Header -->
+      <header class="hud-header">
+        <div class="hud-left">
+          <!-- Sol Counter -->
+          <div class="hud-sol-badge">
+            <span class="hud-sol-dot" aria-hidden="true"></span>
+            <span id="hud-sol-display">SOL 01 / 30</span>
+          </div>
+
+          <!-- Story Chapter -->
+          <span id="hud-chapter-display" class="hud-chapter-tag">
+            Chapter 1: The Last Signal
+          </span>
+
+          <!-- Mission Progress Bar -->
+          <div class="hud-progress-wrapper" title="Mission Progress (Sols Elapsed)">
+            <div class="hud-progress-bar">
+              <div id="hud-progress-fill" class="hud-progress-fill" style="width: 3.33%;"></div>
+            </div>
+            <span id="hud-progress-text" class="hud-progress-text">1/30</span>
+          </div>
+        </div>
+
+        <div class="hud-right">
+          <!-- Earth Communication Status -->
+          <div class="hud-comm-badge">
+            <span class="hud-comm-dot" aria-hidden="true"></span>
+            <span id="hud-comm-status">SIGNAL LOST // BLACKOUT</span>
+          </div>
+
+          <!-- Restart Game Button -->
+          <button id="btn-restart-game" class="btn btn-secondary btn-sm" type="button" title="Restart Mission">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <polyline points="23 20 23 14 17 14"></polyline>
+              <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path>
+            </svg>
+            Restart
+          </button>
+        </div>
+      </header>
+
+      <!-- Persistent Three Navigation Tabs -->
+      <nav class="hud-nav-bar" aria-label="Game Tabs">
+        <button id="tab-btn-mission" class="tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="tab-mission">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <polygon points="12 2 19 21 12 17 5 21 12 2"></polygon>
+          </svg>
+          Mission
+        </button>
+        <button id="tab-btn-resources" class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-resources">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          Resources
+        </button>
+        <button id="tab-btn-log" class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-log">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+          Mission Log
+        </button>
+      </nav>
+
+      <!-- ==================================================================
+           TAB 1: MISSION (Story & Events View)
+           ================================================================== -->
+      <section id="tab-mission" class="tab-pane active" role="tabpanel" aria-labelledby="tab-btn-mission">
+        <div class="mission-view-container">
+          <!-- Mars Environment Visual Frame -->
+          <div class="mission-backdrop-frame">
+            <img src="assets/images/mars-landscape.svg" alt="ARES-1 Habitat on Mars" aria-hidden="true">
+            <div class="mission-frame-overlay">
+              <span class="mission-status-pill">
+                <span class="hud-sol-dot" style="background-color: var(--color-status-optimal);" aria-hidden="true"></span>
+                Habitat Status: Pressurized &amp; Secure
+              </span>
+              <div class="mission-headline-wrap">
+                <span class="mission-headline-sol">SOL 01 OF 30 • HIGHLAND SECTOR</span>
+                <h3 class="mission-headline-title">Chapter 1: The Last Signal</h3>
+              </div>
+            </div>
+          </div>
+
+          <!-- Crew Dialogue Dispatch -->
+          <div class="crew-speech-card">
+            <div class="crew-speech-avatar" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <div class="crew-speech-content">
+              <div class="crew-speech-author">
+                <span class="crew-speech-name">Commander Elena Rivera</span>
+                <span class="crew-speech-role">[ARES-LEAD] Outpost Commander</span>
+              </div>
+              <p class="crew-speech-bubble">
+                "Welcome to the hot seat, Commander. Telemetry from the orbital relay dropped without warning. All four of us are healthy, and our life support systems are stable. Let's make sure our battery banks and solar panels are ready before nightfall."
+              </p>
+            </div>
+          </div>
+
+          <!-- Stage 4 Preview Placeholder -->
+          <div class="stage4-preview-card">
+            <h4>Stage 4 &amp; 5: Story Decisions &amp; Resource Engine</h4>
+            <p>
+              In Stage 4, this space will display daily story events, crew deliberations, and interactive decision cards with genuine trade-offs. Check the <strong>Resources</strong> and <strong>Mission Log</strong> tabs to inspect live outpost telemetry!
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           TAB 2: RESOURCES (Exactly Three Visible Core Indicators)
+           ================================================================== -->
+      <section id="tab-resources" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-resources">
+        <div class="resources-container">
+          <div>
+            <h3 style="font-size: 1.5rem; color: var(--color-text-primary); margin-bottom: 0.35rem;">
+              Outpost Operational Telemetry
+            </h3>
+            <p style="font-size: 0.95rem; color: var(--color-text-secondary);">
+              ARES-1 relies on exactly three critical life-and-power indicators. Monitor them carefully each sol:
+            </p>
+          </div>
+
+          <!-- The Exactly 3 Core Resource Gauges -->
+          <div class="resource-cards-list">
+            <!-- 1. Power -->
+            <article class="resource-card">
+              <div class="resource-card-header">
+                <div class="resource-card-info">
+                  <div class="resource-icon-wrap" style="color: #F39C12;">⚡</div>
+                  <div class="resource-card-titles">
+                    <h4 class="resource-card-name">Electrical Power</h4>
+                    <span class="resource-card-desc">Photovoltaic Generation &amp; Battery Reserves</span>
+                  </div>
+                </div>
+                <div class="resource-card-val-group">
+                  <span id="val-power" class="resource-val-number">85%</span>
+                  <span id="band-power" class="tag tag-optimal">OPTIMAL</span>
+                </div>
+              </div>
+              <!-- Gauge Meter -->
+              <div class="resource-gauge-track" role="progressbar" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100" aria-label="Electrical Power">
+                <div id="gauge-power" class="resource-gauge-fill fill-power" style="width: 85%;"></div>
+              </div>
+              <div class="resource-explanation-box">
+                Power drives habitat heating, water recycling, air circulation, science sensors, and radio transmission. Freezing nights and dust storms significantly reduce available solar energy.
+              </div>
+            </article>
+
+            <!-- 2. Life Support -->
+            <article class="resource-card">
+              <div class="resource-card-header">
+                <div class="resource-card-info">
+                  <div class="resource-icon-wrap" style="color: #27AE60;">🌿</div>
+                  <div class="resource-card-titles">
+                    <h4 class="resource-card-name">Life Support</h4>
+                    <span class="resource-card-desc">Integrated Environmental Systems</span>
+                  </div>
+                </div>
+                <div class="resource-card-val-group">
+                  <span id="val-lifesupport" class="resource-val-number">85%</span>
+                  <span id="band-lifesupport" class="tag tag-optimal">OPTIMAL</span>
+                </div>
+              </div>
+              <!-- Gauge Meter -->
+              <div class="resource-gauge-track" role="progressbar" aria-valuenow="85" aria-valuemin="0" aria-valuemax="100" aria-label="Life Support">
+                <div id="gauge-lifesupport" class="resource-gauge-fill fill-lifesupport" style="width: 85%;"></div>
+              </div>
+              <div class="resource-explanation-box">
+                <strong>Educational Note:</strong> Oxygen generation, water recycling, food rations, and thermal control are separate physical systems. The game combines their overall health into this single indicator to keep survival strategy clear and engaging!
+              </div>
+            </article>
+
+            <!-- 3. Radiation Safety -->
+            <article class="resource-card">
+              <div class="resource-card-header">
+                <div class="resource-card-info">
+                  <div class="resource-icon-wrap" style="color: #3498DB;">🛡️</div>
+                  <div class="resource-card-titles">
+                    <h4 class="resource-card-name">Radiation Safety</h4>
+                    <span class="resource-card-desc">Shielding Integrity &amp; Storm Shelter Readiness</span>
+                  </div>
+                </div>
+                <div class="resource-card-val-group">
+                  <span id="val-radiation" class="resource-val-number">80%</span>
+                  <span id="band-radiation" class="tag tag-optimal">OPTIMAL</span>
+                </div>
+              </div>
+              <!-- Gauge Meter -->
+              <div class="resource-gauge-track" role="progressbar" aria-valuenow="80" aria-valuemin="0" aria-valuemax="100" aria-label="Radiation Safety">
+                <div id="gauge-radiation" class="resource-gauge-fill fill-radiation" style="width: 80%;"></div>
+              </div>
+              <div class="resource-explanation-box">
+                <strong>Safety Note:</strong> Mars has no global magnetic field. This gauge tracks the operational readiness of the outpost's regolith berms, airlock seals, and underground storm shelter. It does not measure astronaut medical dose.
+              </div>
+            </article>
+          </div>
+
+          <!-- Audit Card: Recent Fluctuations & Causes -->
+          <div class="resource-audit-card">
+            <h4 style="font-size: 1.15rem; color: var(--color-text-primary);">
+              Recent Changes &amp; Operational Causes
+            </h4>
+            <div id="resource-audit-feed">
+              <div class="audit-feed-item">
+                <div>
+                  <strong style="color:var(--color-text-primary);">Sol 01 Baseline Diagnostics</strong>
+                  <p style="color:var(--color-text-secondary); font-size:0.8rem;">Initial outpost status check following relay blackout.</p>
+                </div>
+                <span class="tag tag-optimal">All Systems Stable</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================================================================
+           TAB 3: MISSION LOG (Chronological Record)
+           ================================================================== -->
+      <section id="tab-log" class="tab-pane" role="tabpanel" aria-labelledby="tab-btn-log">
+        <div class="log-container">
+          <div>
+            <h3 style="font-size: 1.5rem; color: var(--color-text-primary); margin-bottom: 0.35rem;">
+              Chronological Mission Log
+            </h3>
+            <p style="font-size: 0.95rem; color: var(--color-text-secondary);">
+              Official record of all Sol events, player decisions, research discoveries, and Earth communications:
+            </p>
+          </div>
+
+          <div class="log-timeline">
+            <!-- Sol 1 Incident -->
+            <article class="log-item">
+              <div class="log-item-header">
+                <span class="log-item-sol">SOL 01 // 04:12 UTC</span>
+                <span class="tag tag-critical">Signal Lost</span>
+              </div>
+              <h4 class="log-item-title">Earth Orbital Relay Disruption</h4>
+              <p class="log-item-body">
+                The high-gain carrier signal from the Deep Space Network went silent. Diagnostic sensors indicate a combined failure of orbital relay satellites and local transceivers. Autonomous survival protocol engaged for 30 sols.
+              </p>
+            </article>
+
+            <!-- Sol 1 Crew Status -->
+            <article class="log-item">
+              <div class="log-item-header">
+                <span class="log-item-sol">SOL 01 // 06:00 UTC</span>
+                <span class="tag tag-optimal">Nominal</span>
+              </div>
+              <h4 class="log-item-title">Morning Outpost Telemetry Verified</h4>
+              <p class="log-item-body">
+                Commander Rivera, Dr. Al-Mansoor, Marcus Vance, and Dr. Reed confirmed all four crew members are healthy. Outpost starting reserves: Electrical Power at 85%, Life Support at 85%, Radiation Safety at 80%.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <!-- ====================================================================
+         ACCESSIBLE MODAL: MISSION ABOUT & NASA SOURCES (Stage 1)
+         ==================================================================== -->
+    <div id="modal-about" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-about-title" hidden>
+      <div class="modal-dialog">
+        <header class="modal-header">
+          <h2 id="modal-about-title">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            About ARES-1 &amp; Scientific Sources
+          </h2>
+          <button id="btn-close-modal" class="btn-close" type="button" aria-label="Close dialog">&times;</button>
+        </header>
+
+        <div class="modal-body">
+          <!-- Fictional Mission Disclaimer -->
+          <div class="disclaimer-box">
+            <span class="disclaimer-box-title">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                <line x1="12" y1="9" x2="12" y2="13"></line>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              Fictional Mission Notice
+            </span>
+            <p id="disclaimer-text" class="disclaimer-box-body">
+              ARES-1 is a fictional research mission created for the NASA Space Apps Challenge. All incidents, crew dialogues, and outpost emergencies are fictional gameplay scenarios and do not represent actual NASA mission events or astronaut casualties.
+            </p>
+          </div>
+
+          <!-- Educational Classification Tag Definitions -->
+          <div>
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.75rem; color: var(--color-text-primary);">
+              Scientific Content Classification
+            </h3>
+            <p style="font-size: 0.875rem; margin-bottom: 0.85rem;">
+              To maintain scientific integrity, every educational note and decision consequence in ARES is marked with one of four tags:
+            </p>
+            <div id="tag-legend-container" class="tag-legend-list">
+              <!-- Dynamically populated from data/sources.js -->
+            </div>
+          </div>
+
+          <!-- Verified Sources List -->
+          <div>
+            <h3 style="font-size: 1.05rem; margin-bottom: 0.6rem; color: var(--color-text-primary);">
+              Verified NASA Research References
+            </h3>
+            <div id="verified-sources-list">
+              <p style="font-size: 0.875rem; color: var(--color-text-secondary); font-style: italic; background-color: rgba(23, 59, 94, 0.2); padding: 0.75rem 1rem; border-radius: var(--radius-md);">
+                Official scientific sources are currently undergoing human verification before being linked in the public registry.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <footer class="modal-footer">
+          <button id="btn-modal-done" class="btn btn-secondary btn-sm" type="button">Close</button>
+        </footer>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         ACCESSIBLE MODAL: RESTART MISSION CONFIRMATION
+         ==================================================================== -->
+    <div id="modal-restart" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-restart-title" hidden>
+      <div class="modal-dialog modal-dialog-sm">
+        <header class="modal-header">
+          <h3 id="modal-restart-title">Restart ARES-1 Campaign?</h3>
+          <button id="btn-close-restart" class="btn-close" type="button" aria-label="Close dialog">&times;</button>
+        </header>
+        <div class="modal-body">
+          <p style="font-size: 0.95rem; color: var(--color-text-primary); line-height: 1.5;">
+            Are you sure you want to restart your mission? All progress from Sol 01 to Sol 30 will be reset back to the landing page.
+          </p>
+        </div>
+        <footer class="modal-footer">
+          <button id="btn-cancel-restart" class="btn btn-secondary btn-sm" type="button">Cancel</button>
+          <button id="btn-confirm-restart" class="btn btn-danger btn-sm" type="button">Yes, Restart Mission</button>
+        </footer>
+      </div>
+    </div>
+  </main>
+
+  <!-- ES6 Main Application Module -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" width="100%" height="100%">
+  <defs>
+    <!-- Sky & Atmosphere Gradients -->
+    <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#080D17" stop-opacity="0" />
+      <stop offset="60%" stop-color="#1A0A14" stop-opacity="0.4" />
+      <stop offset="100%" stop-color="#47251F" stop-opacity="0.8" />
+    </linearGradient>
+
+    <!-- Mountain Gradients -->
+    <linearGradient id="mountainFar" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3A1917" />
+      <stop offset="100%" stop-color="#1A0C0E" />
+    </linearGradient>
+
+    <linearGradient id="mountainMid" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#732D24" />
+      <stop offset="100%" stop-color="#3A1714" />
+    </linearGradient>
+
+    <linearGradient id="groundDunes" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#C65A35" />
+      <stop offset="35%" stop-color="#9E3D2F" />
+      <stop offset="100%" stop-color="#3D1815" />
+    </linearGradient>
+
+    <linearGradient id="domeGrad" x1="20%" y1="10%" x2="80%" y2="90%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="25%" stop-color="#D1DCE5" />
+      <stop offset="70%" stop-color="#5E7487" />
+      <stop offset="100%" stop-color="#1E2E3D" />
+    </linearGradient>
+
+    <linearGradient id="solarPanelGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1A4A75" />
+      <stop offset="50%" stop-color="#0E2842" />
+      <stop offset="100%" stop-color="#061321" />
+    </linearGradient>
+  </defs>
+
+  <!-- Distant Martian Stars & Moon (Phobos) -->
+  <g id="stars-and-moon" opacity="0.85">
+    <circle cx="180" cy="80" r="1.5" fill="#F4F7FA" opacity="0.6" />
+    <circle cx="320" cy="45" r="1" fill="#F4F7FA" opacity="0.4" />
+    <circle cx="450" cy="110" r="1.8" fill="#F4F7FA" opacity="0.7" />
+    <circle cx="780" cy="60" r="1.2" fill="#F4F7FA" opacity="0.5" />
+    <circle cx="920" cy="95" r="1.5" fill="#F4F7FA" opacity="0.6" />
+    <circle cx="1150" cy="40" r="1.2" fill="#F4F7FA" opacity="0.5" />
+    <circle cx="1320" cy="115" r="2" fill="#F4F7FA" opacity="0.7" />
+    <!-- Phobos (Distant irregular moon) -->
+    <ellipse cx="1060" cy="85" rx="5" ry="4" fill="#E0D7D0" opacity="0.75" />
+    <ellipse cx="1059" cy="86" rx="2" ry="1.5" fill="#B3A8A0" opacity="0.6" />
+  </g>
+
+  <!-- Far Distant Crater Ridge (Crater Rim) -->
+  <path d="M0,320 Q240,260 480,290 T960,270 Q1200,240 1440,290 L1440,600 L0,600 Z" fill="url(#mountainFar)" opacity="0.7" />
+
+  <!-- Mid-distance Martian Peaks & Ridge -->
+  <path d="M0,360 Q180,305 380,335 Q600,290 820,330 Q1060,285 1260,325 Q1380,310 1440,330 L1440,600 L0,600 Z" fill="url(#mountainMid)" />
+
+  <!-- Rolling Fore Dune Terrain -->
+  <path d="M0,430 Q280,390 620,435 Q940,380 1220,425 Q1360,410 1440,430 L1440,600 L0,600 Z" fill="url(#groundDunes)" />
+
+  <!-- Foreground Dust & Ridge Highlights -->
+  <path d="M0,490 Q340,460 720,495 Q1120,450 1440,485 L1440,600 L0,600 Z" fill="#47251F" />
+  <path d="M0,535 Q420,510 880,540 Q1240,515 1440,535 L1440,600 L0,600 Z" fill="#2E1411" />
+
+  <!-- Rover Tracks in Dust -->
+  <path d="M220,600 C340,560 480,540 580,520" stroke="#240E0C" stroke-width="3" stroke-dasharray="6,4" fill="none" opacity="0.6" />
+  <path d="M228,600 C348,560 488,540 588,520" stroke="#240E0C" stroke-width="3" stroke-dasharray="6,4" fill="none" opacity="0.6" />
+
+  <!-- ==========================================
+       ARES-1 HABITAT RESEARCH COMPLEX
+       ========================================== -->
+  <g id="ares-outpost" transform="translate(680, 310)">
+    <!-- Habitat Foundation Berm (Regolith embankment) -->
+    <ellipse cx="140" cy="180" rx="190" ry="24" fill="#3A1714" />
+    <ellipse cx="140" cy="176" rx="175" ry="18" fill="#5A231C" />
+
+    <!-- Secondary Habitat Pod (West Module) -->
+    <path d="M20,175 C20,135 60,115 90,115 C120,115 140,135 140,175 Z" fill="#758B9C" />
+    <path d="M25,175 C25,138 62,120 90,120 C118,120 135,138 135,175 Z" fill="url(#domeGrad)" opacity="0.8" />
+    <rect x="45" y="145" width="20" height="10" rx="3" fill="#173B5E" />
+
+    <!-- Connecting Tunnel Airlock -->
+    <rect x="100" y="150" width="80" height="25" rx="4" fill="#3D4E5E" />
+    <rect x="108" y="153" width="64" height="19" rx="2" fill="#889BAC" />
+    <!-- Pressure rings -->
+    <line x1="124" y1="150" x2="124" y2="175" stroke="#273440" stroke-width="2" />
+    <line x1="140" y1="150" x2="140" y2="175" stroke="#273440" stroke-width="2" />
+    <line x1="156" y1="150" x2="156" y2="175" stroke="#273440" stroke-width="2" />
+
+    <!-- Primary Geodesic Habitat Dome (ARES-1 Core) -->
+    <path d="M90,175 C90,85 160,55 210,55 C260,55 330,85 330,175 Z" fill="url(#domeGrad)" />
+    <!-- Observation Cupola on top -->
+    <path d="M190,58 C190,44 210,40 210,40 C210,40 230,44 230,58 Z" fill="#8FA4B5" />
+    <ellipse cx="210" cy="46" rx="12" ry="5" fill="#2980B9" opacity="0.8" />
+
+    <!-- Dome Structural Seam Lines -->
+    <path d="M210,42 Q210,105 210,175" stroke="#5E7487" stroke-width="1.5" fill="none" opacity="0.6" />
+    <path d="M210,42 Q155,100 130,175" stroke="#5E7487" stroke-width="1.5" fill="none" opacity="0.6" />
+    <path d="M210,42 Q265,100 290,175" stroke="#5E7487" stroke-width="1.5" fill="none" opacity="0.6" />
+    <path d="M102,145 Q210,120 318,145" stroke="#5E7487" stroke-width="1.5" fill="none" opacity="0.5" />
+    <path d="M118,115 Q210,95 302,115" stroke="#5E7487" stroke-width="1.5" fill="none" opacity="0.5" />
+
+    <!-- ARES-1 Stencil Label on Dome -->
+    <text x="210" y="110" font-family="'SFMono-Regular', Consolas, monospace" font-size="9" font-weight="bold" fill="#0B1F35" letter-spacing="2" text-anchor="middle" opacity="0.85">ARES - 1</text>
+
+    <!-- Main EVA Airlock Module (East) -->
+    <path d="M305,175 L305,145 L345,150 L345,175 Z" fill="#4B5D6E" />
+    <rect x="312" y="152" width="25" height="23" rx="2" fill="#1C2733" />
+    <circle cx="320" cy="158" r="2" fill="#27AE60" /> <!-- Green airlock indicator -->
+
+    <!-- Communication Mast & High-Gain Parabolic Dish Antenna -->
+    <line x1="285" y1="130" x2="285" y2="25" stroke="#7A8E9E" stroke-width="3" />
+    <line x1="285" y1="25" x2="285" y2="10" stroke="#A7B4C2" stroke-width="1.5" />
+    <!-- Parabolic High-Gain Dish (Pointed toward Earth orbital plane) -->
+    <path d="M265,15 Q285,32 305,15" stroke="#E17A43" stroke-width="3.5" fill="none" />
+    <ellipse cx="285" cy="20" rx="18" ry="6" fill="#F4F7FA" opacity="0.9" />
+    <line x1="285" y1="20" x2="295" y2="8" stroke="#C65A35" stroke-width="2" />
+    <circle cx="296" cy="7" r="2.5" fill="#E74C3C" /> <!-- Transmitter feed horn -->
+  </g>
+
+  <!-- ==========================================
+       PHOTOVOLTAIC SOLAR PANEL ARRAYS (WEST FIELD)
+       ========================================== -->
+  <g id="solar-farm" transform="translate(140, 375)">
+    <!-- Array 1 (Front Left) -->
+    <g transform="translate(0, 45)">
+      <!-- Panel Mount Posts -->
+      <line x1="60" y1="65" x2="60" y2="90" stroke="#374552" stroke-width="4" />
+      <line x1="120" y1="60" x2="120" y2="85" stroke="#374552" stroke-width="4" />
+      <!-- Angled Photovoltaic Panel -->
+      <polygon points="20,50 160,35 150,75 10,90" fill="url(#solarPanelGrad)" stroke="#6C8299" stroke-width="1.5" />
+      <!-- Photovoltaic Grid Lines -->
+      <line x1="55" y1="46" x2="45" y2="86" stroke="#416788" stroke-width="1" />
+      <line x1="90" y1="42" x2="80" y2="82" stroke="#416788" stroke-width="1" />
+      <line x1="125" y1="38" x2="115" y2="78" stroke="#416788" stroke-width="1" />
+      <line x1="15" y1="70" x2="155" y2="55" stroke="#416788" stroke-width="1" />
+    </g>
+
+    <!-- Array 2 (Midfield Left) -->
+    <g transform="translate(130, 15)">
+      <line x1="50" y1="55" x2="50" y2="75" stroke="#374552" stroke-width="3" />
+      <line x1="100" y1="50" x2="100" y2="70" stroke="#374552" stroke-width="3" />
+      <polygon points="15,40 135,28 125,62 5,74" fill="url(#solarPanelGrad)" stroke="#556C82" stroke-width="1.2" />
+      <line x1="45" y1="37" x2="35" y2="71" stroke="#385875" stroke-width="1" />
+      <line x1="75" y1="34" x2="65" y2="68" stroke="#385875" stroke-width="1" />
+      <line x1="105" y1="31" x2="95" y2="65" stroke="#385875" stroke-width="1" />
+      <line x1="10" y1="57" x2="130" y2="45" stroke="#385875" stroke-width="1" />
+    </g>
+
+    <!-- Array 3 (Far Field Left) -->
+    <g transform="translate(240, -5)">
+      <line x1="40" y1="45" x2="40" y2="60" stroke="#374552" stroke-width="2" />
+      <line x1="80" y1="40" x2="80" y2="55" stroke="#374552" stroke-width="2" />
+      <polygon points="10,32 110,22 100,50 0,60" fill="url(#solarPanelGrad)" stroke="#4A5F73" stroke-width="1" />
+      <line x1="35" y1="29" x2="25" y2="57" stroke="#2F4C66" stroke-width="0.8" />
+      <line x1="60" y1="26" x2="50" y2="54" stroke="#2F4C66" stroke-width="0.8" />
+      <line x1="85" y1="24" x2="75" y2="52" stroke="#2F4C66" stroke-width="0.8" />
+    </g>
+  </g>
+
+  <!-- Weather & Radiometer Sensor Mast (East) -->
+  <g transform="translate(1120, 440)">
+    <line x1="20" y1="60" x2="20" y2="10" stroke="#7A8E9E" stroke-width="2" />
+    <circle cx="20" cy="8" r="3" fill="#E17A43" />
+    <line x1="10" y1="25" x2="30" y2="25" stroke="#A7B4C2" stroke-width="1.5" />
+    <line x1="10" y1="25" x2="8" y2="20" stroke="#A7B4C2" stroke-width="1" />
+    <line x1="30" y1="25" x2="32" y2="20" stroke="#A7B4C2" stroke-width="1" />
+  </g>
+</svg>

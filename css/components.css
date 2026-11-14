@@ -1,0 +1,799 @@
+/* ==========================================================================
+   ARES: The Last Signal - Reusable UI Components
+   ========================================================================== */
+
+/* --- Buttons --- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.85rem 1.8rem;
+  font-family: var(--font-family-base);
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+  user-select: none;
+  white-space: nowrap;
+}
+
+.btn-lg {
+  padding: 1.1rem 2.4rem;
+  font-size: 1.15rem;
+  border-radius: var(--radius-lg);
+}
+
+.btn-sm {
+  padding: 0.45rem 0.9rem;
+  font-size: 0.825rem;
+  border-radius: var(--radius-sm);
+}
+
+/* Primary Mars Orange Button */
+.btn-primary {
+  background: linear-gradient(135deg, var(--color-mars-rust) 0%, var(--color-mars-orange) 100%);
+  color: var(--color-text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-button);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--color-mars-orange) 0%, #F08E56 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(225, 122, 67, 0.45);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(198, 90, 53, 0.4);
+}
+
+/* Secondary Space Ghost Button */
+.btn-secondary {
+  background-color: rgba(23, 59, 94, 0.35);
+  color: var(--color-text-primary);
+  border-color: var(--color-space-medium);
+}
+
+.btn-secondary:hover {
+  background-color: rgba(23, 59, 94, 0.65);
+  border-color: var(--color-mars-orange);
+  color: #FFFFFF;
+}
+
+/* Danger Button for Restart */
+.btn-danger {
+  background: linear-gradient(135deg, #A8281E 0%, #E74C3C 100%);
+  color: #FFFFFF;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.btn-danger:hover {
+  background: linear-gradient(135deg, #C0392B 0%, #FF5E4D 100%);
+  transform: translateY(-1px);
+}
+
+/* Modal Close Button */
+.btn-close {
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1.75rem;
+  line-height: 1;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-close:hover {
+  color: var(--color-text-primary);
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* --- Badges & Tags --- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+}
+
+.tag-real {
+  background-color: var(--tag-real-bg);
+  border-color: var(--tag-real-border);
+  color: var(--tag-real-text);
+}
+
+.tag-science {
+  background-color: var(--tag-science-bg);
+  border-color: var(--tag-science-border);
+  color: var(--tag-science-text);
+}
+
+.tag-simplification {
+  background-color: var(--tag-simplification-bg);
+  border-color: var(--tag-simplification-border);
+  color: var(--tag-simplification-text);
+}
+
+.tag-fictional {
+  background-color: var(--tag-fictional-bg);
+  border-color: var(--tag-fictional-border);
+  color: var(--tag-fictional-text);
+}
+
+/* Status Band Indicators */
+.tag-optimal {
+  background-color: rgba(39, 174, 96, 0.2);
+  border-color: var(--color-status-optimal);
+  color: #69F0AE;
+}
+
+.tag-caution {
+  background-color: rgba(243, 156, 18, 0.2);
+  border-color: var(--color-status-caution);
+  color: #FFD54F;
+}
+
+.tag-critical {
+  background-color: rgba(231, 76, 60, 0.2);
+  border-color: var(--color-status-critical);
+  color: #FF8A80;
+}
+
+/* --- Modal Overlay & Dialog --- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(8, 13, 23, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  z-index: 1000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-dialog {
+  background-color: var(--color-space-dark);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-modal);
+  width: 100%;
+  max-width: 680px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(12px) scale(0.98);
+  transition: transform var(--transition-normal);
+}
+
+.modal-dialog-sm {
+  max-width: 480px;
+}
+
+.modal-overlay.active .modal-dialog {
+  transform: translateY(0) scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--color-space-border);
+  background-color: rgba(7, 20, 38, 0.6);
+}
+
+.modal-header h2,
+.modal-header h3 {
+  font-size: 1.35rem;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--color-space-border);
+  background-color: rgba(7, 20, 38, 0.6);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* --- Educational Callouts & Disclaimers --- */
+.disclaimer-box {
+  background-color: rgba(158, 61, 47, 0.12);
+  border: 1px solid var(--color-mars-red);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.disclaimer-box-title {
+  color: var(--color-mars-orange);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.disclaimer-box-body {
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  line-height: 1.5;
+}
+
+.tag-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.tag-legend-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background-color: rgba(23, 59, 94, 0.2);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-space-medium);
+}
+
+.tag-legend-item .tag {
+  align-self: flex-start;
+}
+
+.tag-legend-desc {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   STAGE 2 COMPONENTS: CREW DOSSIER & SYSTEMS PRIMER
+   ========================================================================== */
+
+/* Crew Dossier Grid */
+.crew-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.crew-card {
+  background-color: rgba(11, 31, 53, 0.75);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+
+.crew-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-mars-orange);
+}
+
+.crew-card-top {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.crew-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(7, 20, 38, 0.9);
+  border: 2px solid var(--color-space-medium);
+  color: var(--color-mars-orange);
+  flex-shrink: 0;
+}
+
+.crew-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.crew-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.crew-role {
+  font-size: 0.8rem;
+  color: var(--color-mars-orange);
+  font-weight: 600;
+}
+
+.crew-bio {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.crew-quote {
+  font-size: 0.8rem;
+  font-style: italic;
+  color: #B8C8D9;
+  background-color: rgba(7, 20, 38, 0.4);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--color-space-medium);
+}
+
+/* Systems Primer Cards */
+.systems-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.system-card {
+  background-color: rgba(11, 31, 53, 0.7);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.system-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.system-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.system-card p {
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.system-note {
+  font-size: 0.8rem !important;
+  color: #B8C8D9 !important;
+  background-color: rgba(7, 20, 38, 0.45);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border-left: 2px solid var(--color-mars-rust);
+}
+
+/* ==========================================================================
+   STAGE 3 COMPONENTS: PERSISTENT HUD, RESOURCE GAUGES, LOGS
+   ========================================================================== */
+
+/* Persistent Header / HUD Bar */
+.hud-header {
+  background-color: var(--color-space-dark);
+  border-bottom: 1px solid var(--color-space-border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  backdrop-filter: blur(8px);
+}
+
+.hud-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.hud-sol-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-family-mono);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-text-primary);
+  background-color: rgba(7, 20, 38, 0.8);
+  padding: 0.35rem 0.85rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-space-medium);
+}
+
+.hud-sol-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-mars-orange);
+  box-shadow: 0 0 8px var(--color-mars-orange);
+}
+
+.hud-chapter-tag {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+.hud-progress-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.hud-progress-bar {
+  width: 120px;
+  height: 8px;
+  background-color: rgba(7, 20, 38, 0.8);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.hud-progress-fill {
+  height: 100%;
+  width: 3.33%; /* 1 of 30 sols */
+  background: linear-gradient(90deg, var(--color-mars-rust), var(--color-mars-orange));
+  border-radius: var(--radius-pill);
+  transition: width var(--transition-normal);
+}
+
+.hud-progress-text {
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.hud-comm-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.85rem;
+  background-color: rgba(168, 40, 30, 0.15);
+  border: 1px solid rgba(231, 76, 60, 0.4);
+  color: #FF8A80;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-family-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.hud-comm-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--color-status-critical);
+}
+
+/* Navigation Tabs Bar */
+.hud-nav-bar {
+  background-color: var(--color-space-deep);
+  border-bottom: 1px solid var(--color-space-border);
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.5rem 0;
+  position: sticky;
+  top: 57px;
+  z-index: 40;
+}
+
+.tab-btn {
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.75rem 1.75rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+  color: var(--color-text-primary);
+  background-color: rgba(23, 59, 94, 0.2);
+}
+
+.tab-btn.active {
+  color: var(--color-mars-orange);
+  border-bottom-color: var(--color-mars-orange);
+}
+
+/* Tab Content Container */
+.tab-pane {
+  display: none;
+  width: 100%;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+  animation: fadeIn 200ms ease-out forwards;
+}
+
+.tab-pane.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- Core Resource Cards & Gauges (Resources Tab) --- */
+.resources-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.resource-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.resource-card {
+  background-color: var(--color-space-dark);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-panel);
+}
+
+.resource-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.resource-card-info {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.resource-icon-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(7, 20, 38, 0.8);
+  border: 1px solid var(--color-space-medium);
+  font-size: 1.25rem;
+}
+
+.resource-card-titles {
+  display: flex;
+  flex-direction: column;
+}
+
+.resource-card-name {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.resource-card-desc {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}
+
+.resource-card-val-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.resource-val-number {
+  font-family: var(--font-family-mono);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--color-text-primary);
+}
+
+/* Gauge Meter Track and Fills */
+.resource-gauge-track {
+  width: 100%;
+  height: 14px;
+  background-color: rgba(7, 20, 38, 0.9);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  position: relative;
+}
+
+.resource-gauge-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1), background-color 400ms ease;
+}
+
+.fill-power {
+  background: linear-gradient(90deg, #E67E22, #F39C12);
+}
+
+.fill-lifesupport {
+  background: linear-gradient(90deg, #16A085, #27AE60);
+}
+
+.fill-radiation {
+  background: linear-gradient(90deg, #2980B9, #3498DB);
+}
+
+.resource-explanation-box {
+  background-color: rgba(7, 20, 38, 0.5);
+  border-radius: var(--radius-md);
+  padding: 0.85rem 1rem;
+  border-left: 3px solid var(--color-space-medium);
+  font-size: 0.875rem;
+  color: #B8C8D9;
+  line-height: 1.5;
+}
+
+/* Audit Log List (Resources Tab) */
+.resource-audit-card {
+  background-color: var(--color-space-dark);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.audit-feed-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(23, 59, 94, 0.3);
+  font-size: 0.875rem;
+}
+
+.audit-feed-item:last-child {
+  border-bottom: none;
+}
+
+/* --- Mission Log Feed Components --- */
+.log-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.log-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  padding-left: 1.5rem;
+  border-left: 2px solid var(--color-space-medium);
+}
+
+.log-item {
+  background-color: var(--color-space-dark);
+  border: 1px solid var(--color-space-border);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+}
+
+.log-item::before {
+  content: "";
+  position: absolute;
+  left: -1.95rem;
+  top: 1.4rem;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-mars-orange);
+  box-shadow: 0 0 6px var(--color-mars-orange);
+}
+
+.log-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.log-item-sol {
+  font-family: var(--font-family-mono);
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--color-mars-orange);
+  text-transform: uppercase;
+}
+
+.log-item-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.log-item-body {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
