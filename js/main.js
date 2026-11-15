@@ -676,9 +676,8 @@ function renderEventPhase(eventId) {
     ` : ""}
 
     <!-- Decision Cards -->
-    <div style="margin-bottom:0.6rem; display:flex; justify-content:space-between; align-items:center;">
-      <span style="font-size:0.9rem; font-weight:700; color:var(--color-text-dim);">Think about it: Choose one order</span>
-      <span style="font-size:0.8rem; color:var(--color-text-dim);">Legend: ▲ gain / ▼ cost</span>
+    <div style="margin-bottom:0.6rem;">
+      <span style="font-size:0.95rem; font-weight:700; color:var(--color-text-dim);">Think about it: Choose one order</span>
     </div>
 
     <div class="decision-cards-grid" id="decision-cards-list">
@@ -686,9 +685,8 @@ function renderEventPhase(eventId) {
         <div class="choice-card-item" data-index="${idx}" data-choice-id="${ch.id}">
           <div class="choice-card-top">
             <span class="choice-card-label">${ch.label}</span>
-            <div class="choice-arrows-row">${formatArrows(ch.deltas || {})}</div>
           </div>
-          <p class="choice-plain-text"><strong>What happens:</strong> ${explain(ch.plain || ch.label)}</p>
+          <p class="choice-plain-text"><strong>Plan:</strong> ${explain(ch.plain || ch.label)}</p>
         </div>
       `).join("")}
     </div>
@@ -787,19 +785,20 @@ function renderOutcomeScreen() {
     const afterEl = document.getElementById(`outcome-after-${type}`);
     const deltaEl = document.getElementById(`outcome-delta-${type}`);
 
-    if (beforeEl) beforeEl.textContent = `${beforeVal}%`;
-    if (afterEl) afterEl.textContent = `${afterVal}%`;
+    const unit = type === "morale" ? "" : "%";
+    if (beforeEl) beforeEl.textContent = `${beforeVal ?? 0}${unit}`;
+    if (afterEl) afterEl.textContent = `${afterVal ?? 0}${unit}`;
     if (deltaEl) {
       deltaEl.className = "delta-pill";
       if (deltaVal > 0) {
         deltaEl.classList.add("gain");
-        deltaEl.textContent = `+${deltaVal}%`;
+        deltaEl.textContent = `+${deltaVal}${unit}`;
       } else if (deltaVal < 0) {
         deltaEl.classList.add("cost");
-        deltaEl.textContent = `${deltaVal}%`;
+        deltaEl.textContent = `${deltaVal}${unit}`;
       } else {
         deltaEl.classList.add("neutral");
-        deltaEl.textContent = "0%";
+        deltaEl.textContent = `0${unit}`;
       }
     }
   };
@@ -807,6 +806,7 @@ function renderOutcomeScreen() {
   updateOutcomeGauge("power", res.before.power, res.after.power, res.appliedDeltas.power);
   updateOutcomeGauge("ls", res.before.lifeSupport, res.after.lifeSupport, res.appliedDeltas.lifeSupport);
   updateOutcomeGauge("rad", res.before.radiationSafety, res.after.radiationSafety, res.appliedDeltas.radiationSafety);
+  updateOutcomeGauge("morale", res.before.morale, res.after.morale, res.appliedDeltas.morale);
 
   // Crew Reaction
   const reaction = res.crewReaction || {
@@ -1175,7 +1175,18 @@ function init() {
     renderSol: () => startDayPhase("opening"),
     showEnding: (end) => showEndingScreen(end),
     showScreen: (sc) => showScreen(sc),
-    startDayPhase: (p, id) => startDayPhase(p, id)
+    startDayPhase: (p, id) => startDayPhase(p, id),
+    renderReflection: () => {
+      showScreen("reflection");
+      renderReflectionScreen(document.getElementById("reflection-container"), state, () => {
+        showScreen("journal");
+        renderJournalScreen(document.getElementById("journal-container"), state);
+      });
+    },
+    renderJournal: () => {
+      showScreen("journal");
+      renderJournalScreen(document.getElementById("journal-container"), state);
+    }
   });
 
   // 7. Route to saved state or show intro

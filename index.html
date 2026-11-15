@@ -231,8 +231,8 @@
                 <span class="meal-card-title">🍲 Full Meals</span>
                 <span class="meal-card-desc">A hot meal pouch + a whole bottle of water for each astronaut.</span>
                 <div class="meal-deltas-line">
-                  <span class="delta-pill cost">Life Support −3%</span>
-                  <span class="delta-pill gain">Mood +4</span>
+                  <span class="delta-pill cost">▼ Life Support</span>
+                  <span class="delta-pill gain">▲ Mood</span>
                 </div>
               </button>
 
@@ -241,8 +241,8 @@
                 <span class="meal-card-title">🥣 Half Meals</span>
                 <span class="meal-card-desc">A smaller meal pouch + half a bottle of water.</span>
                 <div class="meal-deltas-line">
-                  <span class="delta-pill cost">Life Support −2%</span>
-                  <span class="delta-pill cost">Mood −2</span>
+                  <span class="delta-pill cost">▼ Life Support</span>
+                  <span class="delta-pill cost">▼ Mood</span>
                 </div>
               </button>
 
@@ -251,8 +251,8 @@
                 <span class="meal-card-title">🍫 Snack Bars Only</span>
                 <span class="meal-card-desc">One high-calorie snack bar + a few sips of water.</span>
                 <div class="meal-deltas-line">
-                  <span class="delta-pill cost">Life Support −1%</span>
-                  <span class="delta-pill cost">Mood −6</span>
+                  <span class="delta-pill cost">▼ Life Support</span>
+                  <span class="delta-pill cost">▼▼ Mood</span>
                 </div>
               </button>
             </div>
@@ -361,6 +361,16 @@
               <span id="outcome-after-rad">80%</span>
             </div>
             <span class="delta-pill neutral" id="outcome-delta-rad">0%</span>
+          </div>
+
+          <div class="outcome-gauge-box">
+            <span style="font-size: 0.85rem; font-weight: 700; color: var(--color-text-dim);">🙂 CREW MOOD</span>
+            <div class="outcome-trans-numbers">
+              <span id="outcome-before-morale" style="color:var(--color-text-secondary); text-decoration:line-through; font-size:1.1rem;">80</span>
+              <span style="color:var(--color-mars-orange);">&rarr;</span>
+              <span id="outcome-after-morale">80</span>
+            </div>
+            <span class="delta-pill neutral" id="outcome-delta-morale">0</span>
           </div>
         </div>
 
@@ -620,19 +630,19 @@
         </footer>
       </div>
     </div>
-
-    <!-- ====================================================================
-         DEVELOPER TOOLS PANEL (Toggle via button or `~` key)
-         ==================================================================== -->
-    <div id="dev-tools-wrapper">
-      <button id="btn-dev-toggle" class="btn-dev-toggle" type="button" title="Toggle Developer Tools (Hotkey: ~)">
-        🛠️ DEV TOOLS
-      </button>
-      <aside id="dev-tools-panel" class="dev-tools-panel" hidden aria-label="ARES Developer Controls">
-        <!-- Injected by js/devTools.js -->
-      </aside>
-    </div>
   </main>
+
+  <!-- ====================================================================
+       DEVELOPER TOOLS PANEL (Toggle via button, URL ?dev=1, or `~` key)
+       ==================================================================== -->
+  <div id="dev-tools-wrapper" role="region" aria-label="Developer Tools">
+    <button id="btn-dev-toggle" class="btn-dev-toggle" type="button" title="Toggle Developer Tools (Hotkey: ~ or ?dev=1)" aria-haspopup="dialog" aria-expanded="false">
+      🛠️ DEV TOOLS
+    </button>
+    <aside id="dev-tools-panel" class="dev-tools-panel" hidden aria-label="ARES Developer Controls">
+      <!-- Injected by js/devTools.js -->
+    </aside>
+  </div>
 
   <!-- ES6 Main Application Module -->
   <script type="module" src="js/main.js?v=3.0"></script>

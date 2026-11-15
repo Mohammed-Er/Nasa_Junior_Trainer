@@ -1,6 +1,7 @@
 /**
  * ARES: The Last Signal - Developer Diagnostics & Testing Tools (v3)
- * Gated strictly behind URL query ?dev=1 or hidden hotkey '~' (Backquote).
+ * Gated behind URL query (?dev=1, ?dev, ?devtools=1, ?debug=1),
+ * keyboard shortcut '~' (Backquote), or the floating DEV TOOLS button.
  */
 
 import { GAME_CONSTANTS } from "./constants.js";
@@ -8,31 +9,78 @@ import { EVENTS_DATA } from "../data/eventsData.js";
 import { saveGameState, clearSavedGame } from "./gameState.js";
 import { evaluateMissionEnding, serveMeal, applyResourceChanges } from "./gameEngine.js";
 
-export function initDevTools({ getState, setState, syncUI, renderSol, showEnding, showScreen, startDayPhase }) {
+export function initDevTools({
+  getState,
+  setState,
+  syncUI,
+  renderSol,
+  showEnding,
+  showScreen,
+  startDayPhase,
+  renderReflection,
+  renderJournal
+}) {
   const wrapper = document.getElementById("dev-tools-wrapper");
   const panel = document.getElementById("dev-tools-panel");
   const toggleBtn = document.getElementById("btn-dev-toggle");
 
   if (!wrapper || !panel || !toggleBtn) return;
 
-  wrapper.hidden = false;
+  // URL param detection (?dev=1, ?dev, ?devtools=1, ?debug=1)
+  const searchParams = new URLSearchParams(window.location.search);
+  const isDevUrl =
+    searchParams.has("dev") ||
+    searchParams.has("devtools") ||
+    searchParams.has("debug") ||
+    window.location.hash.includes("dev");
 
-  // Keyboard shortcut '~' (Backquote) to toggle developer panel
+  const openPanel = () => {
+    panel.hidden = false;
+    toggleBtn.classList.add("is-active");
+    toggleBtn.setAttribute("aria-expanded", "true");
+  };
+
+  const closePanel = () => {
+    panel.hidden = true;
+    toggleBtn.classList.remove("is-active");
+    toggleBtn.setAttribute("aria-expanded", "false");
+  };
+
+  const togglePanel = () => {
+    if (panel.hidden) {
+      openPanel();
+    } else {
+      closePanel();
+    }
+  };
+
+  // If URL has ?dev=1, auto-open immediately
+  if (isDevUrl) {
+    openPanel();
+  } else {
+    panel.hidden = true;
+  }
+
+  // Keyboard shortcut '~' (Backquote) or Escape
   window.addEventListener("keydown", (e) => {
     if (e.key === "~" || e.key === "`") {
-      panel.hidden = !panel.hidden;
+      e.preventDefault();
+      togglePanel();
+    } else if (e.key === "Escape" && !panel.hidden) {
+      closePanel();
     }
   });
 
-  toggleBtn.addEventListener("click", () => {
-    panel.hidden = !panel.hidden;
+  toggleBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    togglePanel();
   });
 
   // Render DevTools UI Controls
   panel.innerHTML = `
     <div class="dev-tools-header">
       <span class="dev-tools-title">🛠️ ARES DEV CONTROLS (v3)</span>
-      <button id="btn-dev-close" class="btn-close" style="font-size: 1.2rem; width: 1.8rem; height: 1.8rem;">&times;</button>
+      <button id="btn-dev-close" class="dev-tools-close-btn" type="button" aria-label="Close Developer Controls">&times;</button>
     </div>
 
     <!-- 1. Jump to Sol -->
@@ -111,7 +159,7 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
     </div>
 
     <!-- 7. Reset Save -->
-    <div class="dev-tools-group" style="margin-bottom:0;">
+    <div class="dev-tools-group" style="margin-bottom:0; border-bottom:none;">
       <button id="btn-dev-reset" class="dev-tools-btn" style="width:100%; border-color:#ef4444; color:#fca5a5;" type="button">
         🗑️ Clear Save & Reload
       </button>
@@ -119,7 +167,7 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
   `;
 
   panel.querySelector("#btn-dev-close").addEventListener("click", () => {
-    panel.hidden = true;
+    closePanel();
   });
 
   // Jump to Sol
@@ -130,7 +178,9 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
     state.supplyDone = false;
     state.awaitingDecision = false;
     state.chapter = Math.min(5, Math.floor((targetSol - 1) / 6) + 1);
+    state.status = "active";
     saveGameState(state);
+    if (showScreen) showScreen("game");
     if (renderSol) renderSol();
     if (syncUI) syncUI();
   });
@@ -171,6 +221,8 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
     const state = getState();
     state.morale = 10;
     state.crewBreakLastSol = -99;
+    state.status = "active";
+    if (showScreen) showScreen("game");
     if (startDayPhase) startDayPhase("event", "evt_crew_break");
     if (syncUI) syncUI();
   });
@@ -178,16 +230,33 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
   // Force Trigger Event
   panel.querySelector("#btn-dev-fire-event").addEventListener("click", () => {
     const eventId = panel.querySelector("#dev-select-event").value;
+    const state = getState();
+    state.status = "active";
+    if (showScreen) showScreen("game");
     if (startDayPhase) startDayPhase("event", eventId);
   });
 
   // Jump to Screen
   panel.querySelector("#btn-dev-screen-refl").addEventListener("click", () => {
-    if (showScreen) showScreen("reflection");
+    if (renderReflection) renderReflection();
   });
   panel.querySelector("#btn-dev-screen-jour").addEventListener("click", () => {
-    if (showScreen) showScreen("journal");
+    if (renderJournal) renderJournal();
   });
+
+  // Toggle Objectives
+  const toggleObj = (key) => {
+    const state = getState();
+    if (!state.objectives) state.objectives = {};
+    state.objectives[key] = !state.objectives[key];
+    saveGameState(state);
+    if (syncUI) syncUI();
+  };
+  panel.querySelector("#btn-dev-obj-comms")?.addEventListener("click", () => toggleObj("commsRestored"));
+  panel.querySelector("#btn-dev-obj-antenna")?.addEventListener("click", () => toggleObj("antennaAligned"));
+  panel.querySelector("#btn-dev-obj-samples")?.addEventListener("click", () => toggleObj("researchSamples"));
+  panel.querySelector("#btn-dev-obj-panels")?.addEventListener("click", () => toggleObj("panelsUnderstood"));
+  panel.querySelector("#btn-dev-obj-shelter")?.addEventListener("click", () => toggleObj("shelterProtocolsMaintained"));
 
   // Endings
   panel.querySelector("#btn-dev-end-1").addEventListener("click", () => {
@@ -219,4 +288,35 @@ export function initDevTools({ getState, setState, syncUI, renderSol, showEnding
     clearSavedGame();
     window.location.reload();
   });
+
+  // Expose convenient global helper on window for browser console access
+  window.aresDev = {
+    open: openPanel,
+    close: closePanel,
+    toggle: togglePanel,
+    getState,
+    jumpSol: (sol) => {
+      const state = getState();
+      state.sol = sol;
+      state.supplyDone = false;
+      state.awaitingDecision = false;
+      state.chapter = Math.min(5, Math.floor((sol - 1) / 6) + 1);
+      state.status = "active";
+      saveGameState(state);
+      if (showScreen) showScreen("game");
+      if (renderSol) renderSol();
+      if (syncUI) syncUI();
+    },
+    triggerEvent: (eventId) => {
+      const state = getState();
+      state.status = "active";
+      if (showScreen) showScreen("game");
+      if (startDayPhase) startDayPhase("event", eventId);
+    },
+    setResources: (deltas) => adjust(deltas),
+    reset: () => {
+      clearSavedGame();
+      window.location.reload();
+    }
+  };
 }
