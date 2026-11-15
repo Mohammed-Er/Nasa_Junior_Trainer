@@ -88,9 +88,11 @@ export function initDevTools({
       <label class="dev-tools-label" for="dev-select-sol">Jump to Sol (1–30):</label>
       <div style="display:flex; gap:0.4rem;">
         <select id="dev-select-sol" class="dev-tools-select" style="flex-grow:1;">
-          ${Array.from({ length: 30 }, (_, i) => i + 1).map((s) => `
-            <option value="${s}">Sol ${s < 10 ? "0" + s : s}</option>
-          `).join("")}
+          ${Array.from({ length: 30 }, (_, i) => i + 1).map((s) => {
+            const hasEvent = [3, 6, 8, 11, 14, 15, 19, 21, 22, 23, 27, 30].includes(s);
+            const num = s < 10 ? "0" + s : s;
+            return `<option value="${s}">Sol ${num} ${hasEvent ? "⚡ (Event)" : "· (Routine)"}</option>`;
+          }).join("")}
         </select>
         <button id="btn-dev-jump-sol" class="dev-tools-btn" type="button">Jump</button>
       </div>
