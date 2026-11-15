@@ -1,23 +1,27 @@
 /**
- * ARES: The Last Signal - Master Application Orchestrator
- * Stages 1 through 10: Complete Implementation
- * - Welcoming & NASA Briefing
- * - Persistent HUD & Navigation Tabs
- * - Dynamic Campaign & Seeded Events
- * - Decision Cards with Trade-off Previews
- * - Dedicated Outcome Report
- * - Delayed Interplanetary Earth Communications System (Stage 8)
- * - Sol 30 Ending Evaluation, Mission Patches & Soft Grace Triage (Stage 9)
- * - Developer Diagnostics Overlay (Stage 10)
+ * ARES: The Last Signal - Master Application Orchestrator (v3)
+ * 
+ * Implements:
+ * - Full v3 story bible & kid-friendly tone (Grades 4-5)
+ * - 2D background atmosphere and particle management
+ * - 7-beat skippable intro cinematic
+ * - 3-panel comic briefing
+ * - Top persistent HUD (Sol, Chapter Goal, 5-step antenna tracker, 3 gauges, Morale face)
+ * - Day flow state machine: opening -> supply -> event / routine -> outcome -> night
+ * - Morning meal serving animation with 4 illustrated astronaut busts
+ * - Sequential event reveals with directional arrows
+ * - Dedicated outcome screen with before-and-after gauges
+ * - Overnight report with delayed consequence callbacks
+ * - Post-game 4 reflection questions and printable 1-page Mission Journal
+ * - Non-blocking in-game toasts (zero alert() calls)
  */
 
-import { TAG_DEFINITIONS, FICTIONAL_DISCLAIMER, SOURCES } from "../data/sources.js";
-import { CREW } from "../data/crew.js";
-import { GAME_CONSTANTS } from "./constants.js";
+import { GAME_CONSTANTS, getMoodInfo } from "./constants.js";
 import { createInitialState, saveGameState, loadGameState, clearSavedGame } from "./gameState.js";
 import {
   applyChoice,
   advanceSol,
+  serveMeal,
   sendStatusQuery,
   applyEmergencyTriage,
   EMERGENCY_TRIAGE_OPTIONS,
@@ -25,1142 +29,1179 @@ import {
 } from "./gameEngine.js";
 import { EVENTS_DATA } from "../data/eventsData.js";
 import { CAMPAIGN_BEATS } from "../data/campaign.js";
+import { RATIONS, getMenuForSol } from "../data/rationsData.js";
+import { initGlossary, explain } from "./glossary.js";
+import { renderAstronaut, normalizeCrewId } from "./astronaut.js";
+import { initBackground, setBackground } from "./background.js";
+import { reveal, typewriter, isReducedMotion } from "./sequencer.js";
+import { renderReflectionScreen, renderJournalScreen } from "./reflection.js";
 import { initDevTools } from "./devTools.js";
+import { SOURCES, TAG_DEFINITIONS } from "../data/sources.js";
 
 // Master In-Memory State
 let state = null;
 let currentEvent = null;
-let selectedChoiceId = null;
+let selectedChoice = null;
+let selectedMealRationId = null;
 let selectedTriageId = null;
-let lastFocusedElement = null;
 
-// Screen Elements
-const screenWelcome = document.getElementById("screen-welcome");
-const screenBriefing = document.getElementById("screen-briefing");
-const screenGame = document.getElementById("screen-game");
-const screenOutcome = document.getElementById("screen-outcome");
-const screenEnding = document.getElementById("screen-ending");
-
-// Navigation & Header Elements
-const btnStartMission = document.getElementById("btn-start-mission");
-const btnBriefingBack = document.getElementById("btn-briefing-back");
-const btnBeginMission = document.getElementById("btn-begin-mission");
-const btnRestartGame = document.getElementById("btn-restart-game");
-
-const hudSolDisplay = document.getElementById("hud-sol-display");
-const hudChapterDisplay = document.getElementById("hud-chapter-display");
-const hudProgressFill = document.getElementById("hud-progress-fill");
-const hudProgressText = document.getElementById("hud-progress-text");
-const hudCommBadge = document.getElementById("hud-comm-badge");
-const hudCommStatus = document.getElementById("hud-comm-status");
-const btnHudQuery = document.getElementById("btn-hud-query");
-
-// Tab Navigation Elements
-const tabBtns = {
-  mission: document.getElementById("tab-btn-mission"),
-  resources: document.getElementById("tab-btn-resources"),
-  log: document.getElementById("tab-btn-log")
+// Screen DOM Elements
+const screens = {
+  welcome: document.getElementById("screen-welcome"),
+  briefing: document.getElementById("screen-briefing"),
+  game: document.getElementById("screen-game"),
+  outcome: document.getElementById("screen-outcome"),
+  night: document.getElementById("screen-night"),
+  ending: document.getElementById("screen-ending"),
+  reflection: document.getElementById("screen-reflection"),
+  journal: document.getElementById("screen-journal")
 };
 
-const tabPanes = {
-  mission: document.getElementById("tab-mission"),
-  resources: document.getElementById("tab-resources"),
-  log: document.getElementById("tab-log")
-};
+// Global HUD Element
+const globalHud = document.getElementById("global-hud");
 
-// Mission Tab Dynamic Containers
-const missionEventContainer = document.getElementById("mission-event-container");
-const overnightReportBox = document.getElementById("overnight-report-box");
-const overnightReportList = document.getElementById("overnight-report-list");
-const incomingCommBanner = document.getElementById("incoming-comm-banner");
+// Toast Notification System
+export function showToast(message, type = "info", duration = 3500) {
+  const container = document.getElementById("toast-container");
+  if (!container) return;
 
-// Resources Tab Elements
-const valPower = document.getElementById("val-power");
-const bandPower = document.getElementById("band-power");
-const gaugePower = document.getElementById("gauge-power");
+  const toast = document.createElement("div");
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
 
-const valLifeSupport = document.getElementById("val-lifesupport");
-const bandLifeSupport = document.getElementById("band-lifesupport");
-const gaugeLifeSupport = document.getElementById("gauge-lifesupport");
-
-const valRadiation = document.getElementById("val-radiation");
-const bandRadiation = document.getElementById("band-radiation");
-const gaugeRadiation = document.getElementById("gauge-radiation");
-
-const resourceAuditFeed = document.getElementById("resource-audit-feed");
-const logTimeline = document.querySelector(".log-timeline");
-
-// Comm Console Elements (in Mission Log Tab)
-const btnSendCommQuery = document.getElementById("btn-send-comm-query");
-const commConsoleStatusPill = document.getElementById("comm-console-status-pill");
-const commQueryStatus = document.getElementById("comm-query-status");
-
-// Outcome Screen Elements
-const outcomeSolBadge = document.getElementById("outcome-sol-badge");
-const outcomeEventTitle = document.getElementById("outcome-event-title");
-const outcomeChoiceLabel = document.getElementById("outcome-choice-label");
-const outcomeNarrativeText = document.getElementById("outcome-narrative-text");
-
-const outcomeDeltaPower = document.getElementById("outcome-delta-power");
-const outcomeBeforePower = document.getElementById("outcome-before-power");
-const outcomeAfterPower = document.getElementById("outcome-after-power");
-
-const outcomeDeltaLs = document.getElementById("outcome-delta-ls");
-const outcomeBeforeLs = document.getElementById("outcome-before-ls");
-const outcomeAfterLs = document.getElementById("outcome-after-ls");
-
-const outcomeDeltaRad = document.getElementById("outcome-delta-rad");
-const outcomeBeforeRad = document.getElementById("outcome-before-rad");
-const outcomeAfterRad = document.getElementById("outcome-after-rad");
-
-const outcomeCrewName = document.getElementById("outcome-crew-name");
-const outcomeCrewRole = document.getElementById("outcome-crew-role");
-const outcomeCrewQuote = document.getElementById("outcome-crew-quote");
-const outcomeScienceTag = document.getElementById("outcome-science-tag");
-const outcomeScienceText = document.getElementById("outcome-science-text");
-const btnOutcomeContinue = document.getElementById("btn-outcome-continue");
-
-// Ending Screen Elements (Stage 9)
-const endingBadgeTag = document.getElementById("ending-badge-tag");
-const endingTitle = document.getElementById("ending-title");
-const endingSubtitle = document.getElementById("ending-subtitle");
-const endingBadgeContainer = document.getElementById("ending-badge-container");
-const endingStatusTag = document.getElementById("ending-status-tag");
-const endingNarrative = document.getElementById("ending-narrative");
-const endingCrewSpeaker = document.getElementById("ending-crew-speaker");
-const endingCrewRole = document.getElementById("ending-crew-role");
-const endingCrewQuote = document.getElementById("ending-crew-quote");
-
-const endingValPower = document.getElementById("ending-val-power");
-const endingPowerTag = document.getElementById("ending-power-tag");
-const endingValLs = document.getElementById("ending-val-ls");
-const endingLsTag = document.getElementById("ending-ls-tag");
-const endingValRad = document.getElementById("ending-val-rad");
-const endingRadTag = document.getElementById("ending-rad-tag");
-
-const endingObjectivesCount = document.getElementById("ending-objectives-count");
-const endingObjectivesList = document.getElementById("ending-objectives-list");
-const endingScienceTakeaway = document.getElementById("ending-science-takeaway");
-const btnEndingReviewLog = document.getElementById("btn-ending-review-log");
-const btnEndingRestart = document.getElementById("btn-ending-restart");
-
-// Modal Elements: About & Sources
-const btnAbout = document.getElementById("btn-about");
-const modalAbout = document.getElementById("modal-about");
-const btnCloseModal = document.getElementById("btn-close-modal");
-const btnModalDone = document.getElementById("btn-modal-done");
-const tagLegendContainer = document.getElementById("tag-legend-container");
-const verifiedSourcesList = document.getElementById("verified-sources-list");
-const disclaimerText = document.getElementById("disclaimer-text");
-
-// Modal Elements: Restart Confirmation
-const modalRestart = document.getElementById("modal-restart");
-const btnCloseRestart = document.getElementById("btn-close-restart");
-const btnCancelRestart = document.getElementById("btn-cancel-restart");
-const btnConfirmRestart = document.getElementById("btn-confirm-restart");
-
-// Modal Elements: Emergency Lifeboat Triage
-const modalTriage = document.getElementById("modal-triage");
-const triageCardsGrid = document.getElementById("triage-cards-grid");
-const btnConfirmTriage = document.getElementById("btn-confirm-triage");
-
-// Crew Dossier Container
-const crewDossierGrid = document.getElementById("crew-dossier-grid");
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.style.opacity = "0";
+    toast.style.transform = "translateY(10px)";
+    toast.style.transition = "all 0.3s ease";
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
+}
 
 /**
- * Screen Navigator - Transitions between major screens
+ * Switch Active Screen
  */
-function showScreen(screenId) {
-  const allScreens = [screenWelcome, screenBriefing, screenGame, screenOutcome, screenEnding];
-  allScreens.forEach((screen) => {
-    if (screen) {
-      screen.classList.remove("active");
-      screen.hidden = true;
+export function showScreen(screenId) {
+  Object.entries(screens).forEach(([id, el]) => {
+    if (!el) return;
+    if (id === screenId) {
+      el.classList.add("active");
+      el.hidden = false;
+    } else {
+      el.classList.remove("active");
+      el.hidden = true;
     }
   });
 
-  const target = document.getElementById(screenId);
-  if (target) {
-    target.hidden = false;
-    requestAnimationFrame(() => {
-      target.classList.add("active");
-    });
+  // HUD is visible during mission gameplay screens
+  const showHudScreens = ["game", "outcome", "night"];
+  if (globalHud) {
+    globalHud.hidden = !showHudScreens.includes(screenId);
   }
 
+  // Update background atmosphere
   if (state) {
-    state.currentScreen = screenId.replace("screen-", "");
-    saveGameState(state);
+    const danger = currentEvent?.dangerLevel || "low";
+    setBackground({ chapter: state.chapter, danger });
   }
 
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 /**
- * Tab Switcher - Switches between Mission, Resources, and Log
+ * Synchronize HUD Numbers, Meters, Morale Face, and Antenna Tracker
  */
-function switchTab(targetTabKey) {
-  Object.keys(tabBtns).forEach((key) => {
-    const btn = tabBtns[key];
-    const pane = tabPanes[key];
-
-    if (key === targetTabKey) {
-      btn?.classList.add("active");
-      btn?.setAttribute("aria-selected", "true");
-      pane?.classList.add("active");
-    } else {
-      btn?.classList.remove("active");
-      btn?.setAttribute("aria-selected", "false");
-      pane?.classList.remove("active");
-    }
-  });
-
-  if (state) {
-    state.currentTab = targetTabKey;
-    saveGameState(state);
-  }
-}
-
-/**
- * Modal Controller Helpers
- */
-function openModal(modalEl, focusEl) {
-  lastFocusedElement = document.activeElement;
-  modalEl.hidden = false;
-  requestAnimationFrame(() => {
-    modalEl.classList.add("active");
-    focusEl?.focus();
-  });
-  document.body.style.overflow = "hidden";
-}
-
-function closeModal(modalEl) {
-  modalEl.classList.remove("active");
-  setTimeout(() => {
-    modalEl.hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocusedElement) {
-      lastFocusedElement.focus();
-    }
-  }, 200);
-}
-
-/**
- * Render Status Band (Optimal / Caution / Critical)
- */
-function getBandClassAndLabel(value) {
-  if (value >= GAME_CONSTANTS.BANDS.OPTIMAL_MIN) {
-    return { className: "tag tag-optimal", label: "OPTIMAL" };
-  } else if (value >= GAME_CONSTANTS.BANDS.CAUTION_MIN) {
-    return { className: "tag tag-caution", label: "CAUTION" };
-  } else {
-    return { className: "tag tag-critical", label: "CRITICAL" };
-  }
-}
-
-/**
- * Synchronize UI with Master State
- */
-function syncUIWithState() {
+export function syncHUD() {
   if (!state) return;
 
-  // 1. HUD Header Elements
+  // 1. Sol Counter & Chapter Goal
+  const hudSolDisplay = document.getElementById("hud-sol-display");
   if (hudSolDisplay) {
-    hudSolDisplay.textContent = `SOL ${state.sol < 10 ? "0" + state.sol : state.sol} / ${GAME_CONSTANTS.TOTAL_SOLS}`;
+    hudSolDisplay.textContent = `SOL ${state.sol < 10 ? "0" + state.sol : state.sol} / 30`;
   }
 
-  const currentChap = GAME_CONSTANTS.CHAPTERS.find((c) => c.number === state.chapter);
-  if (hudChapterDisplay && currentChap) {
-    hudChapterDisplay.textContent = `Chapter ${currentChap.number}: ${currentChap.title}`;
+  const beat = CAMPAIGN_BEATS[state.sol];
+  const goalText = beat?.chapterGoal || "Survive and fix the antenna.";
+  const hudGoalDisplay = document.getElementById("hud-goal-display");
+  if (hudGoalDisplay) {
+    hudGoalDisplay.innerHTML = `Ch. ${state.chapter} · Goal: <strong>${goalText}</strong>`;
   }
 
-  const progressPct = ((state.sol / GAME_CONSTANTS.TOTAL_SOLS) * 100).toFixed(1);
-  if (hudProgressFill) {
-    hudProgressFill.style.width = `${progressPct}%`;
-  }
-  if (hudProgressText) {
-    hudProgressText.textContent = `${state.sol}/${GAME_CONSTANTS.TOTAL_SOLS}`;
-  }
+  // 2. 5-Step Antenna Repair Tracker
+  // Steps: 1 Sol 5, 2 Sol 12, 3 Sol 18, 4 Sol 21, 5 Sol 30
+  let completedStep = state.antennaStep || 0;
+  if (state.sol >= 5 && completedStep < 1) completedStep = 1;
+  if (state.sol >= 12 && completedStep < 2) completedStep = 2;
+  if (state.sol >= 18 && completedStep < 3) completedStep = 3;
+  if (state.objectives.antennaAligned && completedStep < 4) completedStep = 4;
+  if (state.objectives.commsRestored) completedStep = 5;
 
-  // HUD Comm Badge & Mission Log Comm Pill
-  if (hudCommStatus) {
-    if (state.comm.status === "restored") {
-      hudCommStatus.textContent = "SIGNAL CARRIER: ACTIVE";
-      hudCommStatus.parentElement.style.borderColor = "rgba(39, 174, 96, 0.4)";
-      hudCommStatus.parentElement.style.color = "#69F0AE";
-      if (commConsoleStatusPill) {
-        commConsoleStatusPill.textContent = "CARRIER ACTIVE";
-        commConsoleStatusPill.className = "tag tag-optimal";
-      }
-    } else if (state.comm.status === "intermittent") {
-      hudCommStatus.textContent = "SIGNAL: INTERMITTENT";
-      hudCommStatus.parentElement.style.borderColor = "rgba(243, 156, 18, 0.4)";
-      hudCommStatus.parentElement.style.color = "#FFD54F";
-      if (commConsoleStatusPill) {
-        commConsoleStatusPill.textContent = "INTERMITTENT";
-        commConsoleStatusPill.className = "tag tag-caution";
-      }
-    } else {
-      hudCommStatus.textContent = "SIGNAL LOST // BLACKOUT";
-      hudCommStatus.parentElement.style.borderColor = "rgba(231, 76, 60, 0.4)";
-      hudCommStatus.parentElement.style.color = "#FF8A80";
-      if (commConsoleStatusPill) {
-        commConsoleStatusPill.textContent = "BLACKOUT";
-        commConsoleStatusPill.className = "tag tag-critical";
+  for (let s = 1; s <= 5; s++) {
+    const stepEl = document.getElementById(`ant-step-${s}`);
+    if (stepEl) {
+      stepEl.classList.remove("is-done", "is-current");
+      if (s <= completedStep) {
+        stepEl.classList.add("is-done");
+      } else if (s === completedStep + 1) {
+        stepEl.classList.add("is-current");
       }
     }
   }
 
-  // Earth Comm Query Console State
-  const pendingQuery = state.commQueue ? state.commQueue.find((m) => m.isQuery) : null;
-  if (pendingQuery) {
-    if (btnSendCommQuery) btnSendCommQuery.disabled = true;
-    if (btnHudQuery) btnHudQuery.disabled = true;
-    if (commQueryStatus) {
-      commQueryStatus.textContent = `Carrier packet en route to Earth. Houston reply expected on Sol ${pendingQuery.deliverOnSol < 10 ? "0" + pendingQuery.deliverOnSol : pendingQuery.deliverOnSol}.`;
-      commQueryStatus.style.color = "var(--color-mars-orange)";
-    }
-  } else {
-    if (btnSendCommQuery) btnSendCommQuery.disabled = false;
-    if (btnHudQuery) btnHudQuery.disabled = false;
-    if (commQueryStatus) {
-      commQueryStatus.textContent = "Relay transceiver idle. Ready to transmit outpost telemetry packet.";
-      commQueryStatus.style.color = "var(--color-text-dim)";
-    }
-  }
+  // 3. Outpost Core Meters (Power, Life Support, Radiation Safety)
+  const { power, lifeSupport, radiationSafety } = state.resources;
 
-  // 2. Resources Gauges
-  const pBand = getBandClassAndLabel(state.resources.power);
-  if (valPower) valPower.textContent = `${state.resources.power}%`;
-  if (gaugePower) gaugePower.style.width = `${state.resources.power}%`;
-  if (bandPower) {
-    bandPower.className = pBand.className;
-    bandPower.textContent = pBand.label;
-  }
+  const updateGauge = (type, val) => {
+    const valEl = document.getElementById(`hud-val-${type}`);
+    const barEl = document.getElementById(`hud-bar-${type}`);
+    const tagEl = document.getElementById(`hud-tag-${type}`);
 
-  const lsBand = getBandClassAndLabel(state.resources.lifeSupport);
-  if (valLifeSupport) valLifeSupport.textContent = `${state.resources.lifeSupport}%`;
-  if (gaugeLifeSupport) gaugeLifeSupport.style.width = `${state.resources.lifeSupport}%`;
-  if (bandLifeSupport) {
-    bandLifeSupport.className = lsBand.className;
-    bandLifeSupport.textContent = lsBand.label;
-  }
+    if (valEl) valEl.textContent = `${val}%`;
+    if (barEl) barEl.style.width = `${Math.max(0, Math.min(100, val))}%`;
 
-  const radBand = getBandClassAndLabel(state.resources.radiationSafety);
-  if (valRadiation) valRadiation.textContent = `${state.resources.radiationSafety}%`;
-  if (gaugeRadiation) gaugeRadiation.style.width = `${state.resources.radiationSafety}%`;
-  if (bandRadiation) {
-    bandRadiation.className = radBand.className;
-    bandRadiation.textContent = radBand.label;
-  }
-
-  // 3. Resources Tab Audit Feed
-  if (resourceAuditFeed && state.recentChanges) {
-    resourceAuditFeed.innerHTML = state.recentChanges.slice(0, 8).map((entry) => {
-      const deltas = entry.deltas;
-      const deltaTokens = [];
-      if (deltas.power !== 0) deltaTokens.push(`Power ${deltas.power > 0 ? "+" : ""}${deltas.power}%`);
-      if (deltas.lifeSupport !== 0) deltaTokens.push(`Life Support ${deltas.lifeSupport > 0 ? "+" : ""}${deltas.lifeSupport}%`);
-      if (deltas.radiationSafety !== 0) deltaTokens.push(`Rad Safety ${deltas.radiationSafety > 0 ? "+" : ""}${deltas.radiationSafety}%`);
-      const deltaSummary = deltaTokens.length > 0 ? deltaTokens.join(" • ") : "No Resource Shift";
-
-      return `
-        <div class="audit-feed-item">
-          <div>
-            <strong style="color:var(--color-text-primary);">Sol ${entry.sol < 10 ? "0" + entry.sol : entry.sol}: ${entry.cause}</strong>
-            <p style="color:var(--color-text-secondary); font-size:0.8rem;">${deltaSummary}</p>
-          </div>
-          <span class="tag tag-optimal">Verified</span>
-        </div>
-      `;
-    }).join("");
-  }
-
-  // 4. Mission Log Tab Feed (with Comm Transmissions & Triage)
-  if (logTimeline && state.logHistory) {
-    logTimeline.innerHTML = state.logHistory.map((item) => {
-      let badgeTag = item.type.toUpperCase();
-      let badgeClass = "tag-science";
-
-      if (item.type === "transmission") {
-        badgeTag = item.wasStale ? "STALE COMM" : "DEEP SPACE RELAY";
-        badgeClass = item.wasStale ? "tag-caution" : "tag-optimal";
-      } else if (item.type === "triage") {
-        badgeTag = "CRITICAL TRIAGE";
-        badgeClass = "tag-critical";
+    if (tagEl) {
+      tagEl.className = "tag";
+      if (val >= GAME_CONSTANTS.BANDS.OPTIMAL_MIN) {
+        tagEl.classList.add("tag-optimal");
+        tagEl.textContent = "Optimal";
+      } else if (val >= GAME_CONSTANTS.BANDS.CAUTION_MIN) {
+        tagEl.classList.add("tag-caution");
+        tagEl.textContent = "Caution";
+      } else {
+        tagEl.classList.add("tag-critical");
+        tagEl.textContent = "Critical";
       }
-
-      return `
-        <article class="log-item" style="${item.type === 'transmission' ? 'border-left: 3px solid #3498DB;' : ''}">
-          <div class="log-item-header">
-            <span class="log-item-sol">SOL ${item.sol < 10 ? "0" + item.sol : item.sol} // ${item.sender || "MISSION LOG"}</span>
-            <span class="tag ${badgeClass}">[${badgeTag}]</span>
-          </div>
-          <h4 class="log-item-title">${item.title}</h4>
-          <p class="log-item-body">${item.text}</p>
-        </article>
-      `;
-    }).join("");
-  }
-
-  // 5. Overnight Report Box
-  if (overnightReportBox && overnightReportList) {
-    if (state.overnightReport && state.overnightReport.log && state.overnightReport.log.length > 0) {
-      overnightReportBox.hidden = false;
-      overnightReportList.innerHTML = state.overnightReport.log
-        .map((line) => `<li>• ${line}</li>`)
-        .join("");
-    } else {
-      overnightReportBox.hidden = true;
     }
-  }
+  };
 
-  // 6. Incoming Earth Comm Banner in Mission Tab
-  if (incomingCommBanner) {
-    if (state.latestComm && state.latestComm.deliveredOnSol === state.sol) {
-      incomingCommBanner.hidden = false;
-      incomingCommBanner.innerHTML = `
-        <div class="incoming-comm-top">
-          <div class="incoming-comm-title-wrap">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3498DB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"></path>
-              <path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"></path>
-              <circle cx="12" cy="12" r="2"></circle>
-              <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"></path>
-              <path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"></path>
-            </svg>
-            <span class="incoming-comm-title">${state.latestComm.subject}</span>
-          </div>
-          <span class="tag ${state.latestComm.wasStale ? 'tag-caution' : 'tag-science'}">
-            ${state.latestComm.wasStale ? 'STALE ADVISORY' : 'EARTH COMM'}
-          </span>
-        </div>
-        <span class="incoming-comm-sender">${state.latestComm.sender} // RECEIVED SOL ${state.sol < 10 ? '0' + state.sol : state.sol}</span>
-        <p class="incoming-comm-body">"${state.latestComm.activeBody}"</p>
-      `;
-    } else {
-      incomingCommBanner.hidden = true;
-    }
-  }
+  updateGauge("power", power);
+  updateGauge("lifesupport", lifeSupport);
+  updateGauge("radiation", radiationSafety);
 
-  // 7. Check for Mid-Campaign Emergency Lifeboat Triage
-  if (state.status === "critical_grace") {
-    openTriageModal();
-  }
+  // 4. Crew Morale (Face + Word + Value)
+  const morale = state.morale !== undefined ? state.morale : 80;
+  const moodInfo = getMoodInfo(morale);
+
+  const faceEl = document.getElementById("hud-morale-face");
+  const wordEl = document.getElementById("hud-morale-word");
+  if (faceEl) faceEl.textContent = moodInfo.face;
+  if (wordEl) wordEl.textContent = `${moodInfo.label} (${morale})`;
+
+  // Save state
+  saveGameState(state);
 }
 
 /**
- * Render Immediate Delta Pills on Decision Cards
+ * =========================================================================
+ * INTRO CINEMATIC (Sol 0, 7 Beats, Skippable)
+ * =========================================================================
  */
-function renderDeltaPills(deltas) {
-  const pills = [];
+const INTRO_LINES = [
+  "Sol 0. Mars.",
+  "Four astronauts live in a small dome called ARES-1.",
+  "Then a huge dust storm hit.",
+  "It bent our big radio antenna. Now Earth can't hear us.",
+  "We can still hear Earth. But Earth can't hear us.",
+  "If Earth doesn't hear from us in 30 sols, no rescue ship will leave.",
+  "You are the Commander. Fix the antenna. Keep everyone safe."
+];
 
-  if (deltas.power > 0) {
-    pills.push(`<span class="delta-pill pos">⚡ +${deltas.power}% Power</span>`);
-  } else if (deltas.power < 0) {
-    pills.push(`<span class="delta-pill neg">⚡ ${deltas.power}% Power</span>`);
-  }
+function playIntroCinematic(onFinish) {
+  const cinematicContainer = document.getElementById("intro-cinematic");
+  const textEl = document.getElementById("cinematic-text");
+  const skipBtn = document.getElementById("btn-skip-cinematic");
+  const welcomeCard = document.getElementById("welcome-title-card");
 
-  if (deltas.lifeSupport > 0) {
-    pills.push(`<span class="delta-pill pos">🌿 +${deltas.lifeSupport}% Life Support</span>`);
-  } else if (deltas.lifeSupport < 0) {
-    pills.push(`<span class="delta-pill neg">🌿 ${deltas.lifeSupport}% Life Support</span>`);
-  }
-
-  if (deltas.radiationSafety > 0) {
-    pills.push(`<span class="delta-pill pos">🛡️ +${deltas.radiationSafety}% Rad Safety</span>`);
-  } else if (deltas.radiationSafety < 0) {
-    pills.push(`<span class="delta-pill neg">🛡️ ${deltas.radiationSafety}% Rad Safety</span>`);
-  }
-
-  if (pills.length === 0) {
-    pills.push(`<span class="delta-pill neutral">No Resource Drain</span>`);
-  }
-
-  return pills.join(" ");
-}
-
-/**
- * Render Current Sol View (Routine Briefing vs Major Event)
- */
-function renderSolView(eventOverride = null) {
-  if (!missionEventContainer || !state) return;
-
-  const currentBeat = CAMPAIGN_BEATS[state.sol];
-
-  // If this is a Routine Day without override (NO decision required: every 3-4 days an event happens)
-  if (!eventOverride && (!currentBeat || !currentBeat.hasDecision)) {
-    selectedChoiceId = null;
-    currentEvent = null;
-    state.awaitingDecision = false;
-
-    const beat = currentBeat || {
-      sol: state.sol,
-      title: "Outpost Daily Maintenance",
-      crewSpeaker: "Marcus Vance",
-      crewRole: "Systems Engineer",
-      crewDialogue: "Power grids and life-support loops checked out clean this morning. Continuing scheduled duties.",
-      habitatStatus: "All modules nominal. Pressurization stable.",
-      crewMood: "Steady & Operational"
-    };
-
-    missionEventContainer.innerHTML = `
-      <section class="decision-section" style="border-color: var(--color-space-medium);">
-        <div class="decision-section-header">
-          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <span class="decision-directive-tag" style="color:var(--color-text-secondary);">
-              DAILY OUTPOST LOG // SOL ${state.sol < 10 ? "0" + state.sol : state.sol}
-            </span>
-            <span class="tag tag-optimal">[CREW MOOD: ${beat.crewMood}]</span>
-          </div>
-          <h3 class="decision-section-title">${beat.title}</h3>
-          <p class="decision-section-intro">${beat.habitatStatus}</p>
-        </div>
-
-        <!-- Daily Crew Dispatch Bubble -->
-        <article class="crew-speech-card" style="margin: 0.5rem 0;">
-          <div class="crew-speech-avatar" aria-hidden="true" style="border-color: var(--color-space-medium); color: var(--color-mars-orange);">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
-          </div>
-          <div class="crew-speech-content">
-            <div class="crew-speech-author">
-              <span class="crew-speech-name">${beat.crewSpeaker}</span>
-              <span class="crew-speech-role">${beat.crewRole}</span>
-            </div>
-            <p class="crew-speech-bubble">"${beat.crewDialogue}"</p>
-          </div>
-        </article>
-
-        <div class="decision-confirm-bar">
-          <span class="decision-selection-note">Daily checks completed. No immediate operational emergency reported.</span>
-          <button id="btn-advance-routine" class="btn btn-primary" type="button">
-            Acknowledge &amp; Advance to Sol ${state.sol + 1 < 10 ? "0" + (state.sol + 1) : state.sol + 1} &rarr;
-          </button>
-        </div>
-      </section>
-    `;
-
-    document.getElementById("btn-advance-routine")?.addEventListener("click", () => {
-      advanceSol(state);
-      if (state.status === "interrupted") {
-        showEndingScreen(evaluateMissionEnding(state));
-        return;
-      }
-      syncUIWithState();
-      renderSolView();
-    });
-
+  if (!cinematicContainer || !textEl) {
+    if (onFinish) onFinish();
     return;
   }
 
-  // If this IS an Event Sol (Fixed Story Beat or Random Slot)
-  let eventData = eventOverride;
-  if (!eventData) {
-    let eventId = currentBeat?.fixedEventId;
-    if (!eventId && currentBeat?.type === "random_slot") {
+  cinematicContainer.hidden = false;
+  welcomeCard.style.display = "none";
+
+  let lineIndex = 0;
+  let isSkipped = false;
+
+  function showNextLine() {
+    if (isSkipped) return;
+    if (lineIndex >= INTRO_LINES.length) {
+      endIntro();
+      return;
+    }
+
+    textEl.classList.remove("active");
+    setTimeout(() => {
+      if (isSkipped) return;
+      textEl.textContent = INTRO_LINES[lineIndex];
+      textEl.classList.add("active");
+      lineIndex++;
+    }, 400);
+  }
+
+  function endIntro() {
+    if (isSkipped) return;
+    isSkipped = true;
+    try {
+      localStorage.setItem("ares_intro_seen", "true");
+    } catch (_) {}
+
+    cinematicContainer.style.opacity = "0";
+    cinematicContainer.style.transition = "opacity 0.6s ease";
+    setTimeout(() => {
+      cinematicContainer.hidden = true;
+      welcomeCard.style.display = "flex";
+      welcomeCard.style.opacity = "1";
+      if (onFinish) onFinish();
+    }, 600);
+  }
+
+  skipBtn.onclick = (e) => {
+    e.stopPropagation();
+    endIntro();
+  };
+
+  cinematicContainer.onclick = () => {
+    showNextLine();
+  };
+
+  const handleKey = (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      showNextLine();
+    }
+  };
+  document.addEventListener("keydown", handleKey);
+
+  showNextLine();
+  const autoTimer = setInterval(() => {
+    if (isSkipped || lineIndex >= INTRO_LINES.length) {
+      clearInterval(autoTimer);
+      document.removeEventListener("keydown", handleKey);
+      if (!isSkipped) endIntro();
+    } else {
+      showNextLine();
+    }
+  }, 3600);
+}
+
+/**
+ * =========================================================================
+ * 3-PANEL BRIEFING SCREEN
+ * =========================================================================
+ */
+let briefingStep = 1;
+
+function renderBriefingStep(step) {
+  briefingStep = step;
+  const contentEl = document.getElementById("briefing-panel-content");
+  const prevBtn = document.getElementById("btn-briefing-prev");
+  const nextBtn = document.getElementById("btn-briefing-next");
+
+  for (let s = 1; s <= 3; s++) {
+    const tabEl = document.getElementById(`b-tab-${s}`);
+    if (tabEl) {
+      tabEl.classList.toggle("active", s === step);
+    }
+  }
+
+  prevBtn.style.visibility = step > 1 ? "visible" : "hidden";
+  nextBtn.textContent = step === 3 ? "Begin Mission: Enter Sol 1 ▶" : "Next Step ▶";
+
+  if (step === 1) {
+    // 1. Meet the Crew
+    contentEl.innerHTML = `
+      <h2 style="font-size:1.85rem; margin-bottom:0.4rem; text-align:center;">Meet Your Expedition Crew</h2>
+      <p style="text-align:center; color:var(--color-text-secondary); margin-bottom:1.5rem;">
+        Four astronauts live inside ARES-1. Listen to their expert advice during crises:
+      </p>
+      <div class="crew-intro-grid">
+        <div class="crew-intro-card">
+          ${renderAstronaut("commander", "happy", 76)}
+          <span class="crew-intro-name">Elena Rivera</span>
+          <span class="tag tag-optimal" style="font-size:0.75rem;">Commander</span>
+          <p class="crew-intro-line">Former test pilot. Calm, steady, and focused on keeping everyone safe.</p>
+        </div>
+        <div class="crew-intro-card">
+          ${renderAstronaut("scientist", "happy", 76)}
+          <span class="crew-intro-name">Dr. Tariq Al-Mansoor</span>
+          <span class="tag tag-science" style="font-size:0.75rem;">Mission Scientist</span>
+          <p class="crew-intro-line">Geologist. Studies Martian rocks, frost, and dangerous radiation.</p>
+        </div>
+        <div class="crew-intro-card">
+          ${renderAstronaut("engineer", "happy", 76)}
+          <span class="crew-intro-name">Marcus Vance</span>
+          <span class="tag tag-caution" style="font-size:0.75rem;">Systems Engineer</span>
+          <p class="crew-intro-line">Keeps solar panels clean, tests rover batteries, and fixes the big antenna.</p>
+        </div>
+        <div class="crew-intro-card">
+          ${renderAstronaut("medic", "happy", 76)}
+          <span class="crew-intro-name">Dr. Hoshi Reed</span>
+          <span class="tag tag-optimal" style="font-size:0.75rem;">Medical Officer</span>
+          <p class="crew-intro-line">Monitors crew health, air scrubbers, water recycling, and daily meals.</p>
+        </div>
+      </div>
+    `;
+  } else if (step === 2) {
+    // 2. How a Day Works
+    contentEl.innerHTML = `
+      <h2 style="font-size:1.85rem; margin-bottom:0.4rem; text-align:center;">How Each Sol Works</h2>
+      <p style="text-align:center; color:var(--color-text-secondary); margin-bottom:2rem;">
+        A sol is one day on Mars (24 hours and 40 minutes). Every sol follows three steps:
+      </p>
+      <div class="day-works-grid">
+        <div class="day-work-step">
+          <div class="day-work-icon">🍲</div>
+          <h3 style="font-size:1.25rem; color:#ffffff; margin-bottom:0.35rem;">1. Morning Meal</h3>
+          <p style="font-size:0.95rem; color:var(--color-text-secondary);">
+            Choose full hot meals, half meals, or snack bars for the crew. Full meals boost mood but use water and food reserves.
+          </p>
+        </div>
+        <div class="day-work-step">
+          <div class="day-work-icon">⚡</div>
+          <h3 style="font-size:1.25rem; color:#ffffff; margin-bottom:0.35rem;">2. Daily Challenge</h3>
+          <p style="font-size:0.95rem; color:var(--color-text-secondary);">
+            When Martian storms or equipment troubles hit, choose how to respond. Every choice has a real cost.
+          </p>
+        </div>
+        <div class="day-work-step">
+          <div class="day-work-icon">🌙</div>
+          <h3 style="font-size:1.25rem; color:#ffffff; margin-bottom:0.35rem;">3. Night Report</h3>
+          <p style="font-size:0.95rem; color:var(--color-text-secondary);">
+            While the crew sleeps, heaters use electricity and isolation makes people tired. Review what changed before the new sol.
+          </p>
+        </div>
+      </div>
+    `;
+  } else {
+    // 3. Your Meters
+    contentEl.innerHTML = `
+      <h2 style="font-size:1.85rem; margin-bottom:0.4rem; text-align:center;">The Four Things You Track</h2>
+      <p style="text-align:center; color:var(--color-text-secondary); margin-bottom:1.5rem;">
+        Keep all three outpost meters above zero, and keep your crew happy:
+      </p>
+      <div class="crew-intro-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));">
+        <div class="crew-intro-card">
+          <span style="font-size:2.5rem;">⚡</span>
+          <span class="crew-intro-name">Electrical Power</span>
+          <p class="crew-intro-line">Electricity from solar panels. Powers heaters, lights, computers, and the radio dish.</p>
+        </div>
+        <div class="crew-intro-card">
+          <span style="font-size:2.5rem;">💧</span>
+          <span class="crew-intro-name">Life Support</span>
+          <p class="crew-intro-line">Clean air, fresh drinking water, and meal supplies recycled inside the dome.</p>
+        </div>
+        <div class="crew-intro-card">
+          <span style="font-size:2.5rem;">🛡️</span>
+          <span class="crew-intro-name">Radiation Safety</span>
+          <p class="crew-intro-line">How well our thick dirt walls and underground storm shelter block dangerous space rays.</p>
+        </div>
+        <div class="crew-intro-card">
+          <span style="font-size:2.5rem;">🙂</span>
+          <span class="crew-intro-name">Crew Mood</span>
+          <p class="crew-intro-line">How the astronauts feel. Hungry or exhausted crews make mistakes that cost power and air.</p>
+        </div>
+      </div>
+    `;
+  }
+}
+
+/**
+ * =========================================================================
+ * DAY FLOW STATE MACHINE (opening -> supply -> event/routine -> outcome -> night)
+ * =========================================================================
+ */
+export function startDayPhase(phase, param = null) {
+  if (!state) return;
+  state.phase = phase;
+  syncHUD();
+
+  const viewOpening = document.getElementById("view-opening");
+  const viewSupply = document.getElementById("view-supply");
+  const viewEvent = document.getElementById("view-event");
+  const viewRoutine = document.getElementById("view-routine");
+
+  [viewOpening, viewSupply, viewEvent, viewRoutine].forEach((v) => {
+    if (v) v.hidden = true;
+  });
+
+  // Ensure game screen is visible
+  if (["opening", "supply", "event", "routine"].includes(phase)) {
+    showScreen("game");
+  }
+
+  if (phase === "opening") {
+    renderOpeningBeat();
+  } else if (phase === "supply") {
+    renderSupplyPhase();
+  } else if (phase === "event") {
+    renderEventPhase(param);
+  } else if (phase === "routine") {
+    renderRoutinePhase();
+  } else if (phase === "outcome") {
+    renderOutcomeScreen();
+  } else if (phase === "night") {
+    renderNightReport();
+  }
+}
+
+/**
+ * Phase 1: Opening Story Beat
+ */
+function renderOpeningBeat() {
+  const viewOpening = document.getElementById("view-opening");
+  if (!viewOpening) return;
+  viewOpening.hidden = false;
+
+  const beat = CAMPAIGN_BEATS[state.sol] || {
+    title: `Sol ${state.sol}`,
+    crewSpeaker: "Commander Elena Rivera",
+    crewDialogue: "Another sol on Mars. Let's get our daily duties underway."
+  };
+
+  const titleEl = document.getElementById("opening-beat-title");
+  const dialogueEl = document.getElementById("opening-beat-dialogue");
+  const avatarSlot = document.getElementById("opening-avatar-slot");
+
+  if (titleEl) titleEl.textContent = beat.title;
+  if (dialogueEl) dialogueEl.innerHTML = explain(beat.crewDialogue);
+
+  const speakerId = normalizeCrewId(beat.crewSpeaker);
+  if (avatarSlot) {
+    avatarSlot.innerHTML = renderAstronaut(speakerId, state.morale, 80);
+  }
+
+  const continueBtn = document.getElementById("btn-opening-continue");
+  if (continueBtn) {
+    continueBtn.onclick = () => {
+      // Sol 30 is transmission day: skips morning meal directly to climax event
+      if (state.sol === 30) {
+        startDayPhase("event", "evt_final_transmission");
+      } else if (state.supplyDone) {
+        advanceToDayChallenge();
+      } else {
+        startDayPhase("supply");
+      }
+    };
+  }
+}
+
+/**
+ * Phase 2: Morning Rations (Sols 1-29)
+ */
+function renderSupplyPhase() {
+  const viewSupply = document.getElementById("view-supply");
+  if (!viewSupply) return;
+  viewSupply.hidden = false;
+
+  // Render today's rotating menu
+  const menu = getMenuForSol(state.sol);
+  const menuText = document.getElementById("menu-today-text");
+  const menuFact = document.getElementById("menu-nasa-fact");
+  if (menuText) {
+    menuText.textContent = `Breakfast: ${menu.breakfast} · Dinner: ${menu.mainMeal} · Snack: ${menu.snack}`;
+  }
+  if (menuFact) {
+    menuFact.textContent = `🚀 Real NASA space food fact: ${menu.nasaFact}`;
+  }
+
+  // Update astronaut busts in serving animation stage
+  const crewMembers = [
+    { id: "rivera", slot: "bust-rivera" },
+    { id: "almansoor", slot: "bust-almansoor" },
+    { id: "vance", slot: "bust-vance" },
+    { id: "reed", slot: "bust-reed" }
+  ];
+  crewMembers.forEach((cm) => {
+    const el = document.getElementById(cm.slot);
+    if (el) el.innerHTML = renderAstronaut(cm.id, state.morale, 64);
+  });
+
+  // Reset serving items visibility
+  document.querySelectorAll(".serving-items").forEach((si) => si.classList.remove("served"));
+
+  const fullBtn = document.getElementById("btn-ration-full");
+  const lightBtn = document.getElementById("btn-ration-light");
+  const emergBtn = document.getElementById("btn-ration-emergency");
+  const repeatBtn = document.getElementById("btn-ration-repeat");
+  const confirmBtn = document.getElementById("btn-confirm-meal");
+
+  [fullBtn, lightBtn, emergBtn].forEach((b) => b?.classList.remove("selected"));
+  confirmBtn.disabled = true;
+  selectedMealRationId = null;
+
+  const selectRation = (id, btn) => {
+    selectedMealRationId = id;
+    [fullBtn, lightBtn, emergBtn].forEach((b) => b?.classList.remove("selected"));
+    btn.classList.add("selected");
+    confirmBtn.disabled = false;
+  };
+
+  fullBtn.onclick = () => selectRation("full", fullBtn);
+  lightBtn.onclick = () => selectRation("light", lightBtn);
+  emergBtn.onclick = () => selectRation("emergency", emergBtn);
+
+  // Shortcut: Serve same as yesterday (shown Sol 2+)
+  if (state.sol > 1 && state.rationHistory && state.rationHistory.length > 0) {
+    repeatBtn.style.display = "inline-flex";
+    const lastChoice = state.rationHistory[state.rationHistory.length - 1].choice;
+    repeatBtn.onclick = () => {
+      const targetBtn = lastChoice === "full" ? fullBtn : lastChoice === "light" ? lightBtn : emergBtn;
+      selectRation(lastChoice, targetBtn);
+    };
+  } else {
+    repeatBtn.style.display = "none";
+  }
+
+  confirmBtn.onclick = async () => {
+    if (!selectedMealRationId) return;
+    confirmBtn.disabled = true;
+
+    // Animate serving bowls & water bottles 350ms apart across the 4 crew members
+    const itemIds = ["items-rivera", "items-almansoor", "items-vance", "items-reed"];
+    for (let i = 0; i < itemIds.length; i++) {
+      const itemEl = document.getElementById(itemIds[i]);
+      if (itemEl) itemEl.classList.add("served");
+      if (!isReducedMotion()) {
+        await new Promise((r) => setTimeout(r, 280));
+      }
+    }
+
+    // Apply meal deltas
+    serveMeal(state, selectedMealRationId);
+    syncHUD();
+
+    // Update busts with new mood expression
+    crewMembers.forEach((cm) => {
+      const el = document.getElementById(cm.slot);
+      if (el) el.innerHTML = renderAstronaut(cm.id, state.morale, 64);
+    });
+
+    showToast(`Breakfast served: ${selectedMealRationId.toUpperCase()} meals for the crew!`, "success");
+
+    setTimeout(() => {
+      advanceToDayChallenge();
+    }, 600);
+  };
+}
+
+/**
+ * Route from meal to event or routine day
+ */
+function advanceToDayChallenge() {
+  // Check forced crew break trigger (morale < 15 and cooldown elapsed)
+  if (
+    state.morale < GAME_CONSTANTS.CREW_BREAK.below &&
+    state.sol - state.crewBreakLastSol >= GAME_CONSTANTS.CREW_BREAK.cooldown &&
+    state.sol < 30
+  ) {
+    state.crewBreakLastSol = state.sol;
+    startDayPhase("event", "evt_crew_break");
+    return;
+  }
+
+  const beat = CAMPAIGN_BEATS[state.sol];
+  if (beat && beat.hasDecision) {
+    let eventId = beat.fixedEventId;
+    if (!eventId && beat.type === "random_slot") {
       eventId = state.eventSchedule ? state.eventSchedule[state.sol] : null;
     }
-    if (!eventId) {
-      eventId = currentBeat?.eventId;
-    }
+    startDayPhase("event", eventId);
+  } else {
+    startDayPhase("routine");
+  }
+}
 
-    eventData = EVENTS_DATA[eventId];
+/**
+ * Phase 3: Daily Crisis / Decision Event (with Sequencer)
+ */
+function renderEventPhase(eventId) {
+  const viewEvent = document.getElementById("view-event");
+  if (!viewEvent) return;
+  viewEvent.hidden = false;
+
+  currentEvent = EVENTS_DATA[eventId] || EVENTS_DATA["evt_solar_dust"];
+  state.awaitingDecision = true;
+  selectedChoice = null;
+
+  const container = document.getElementById("event-stage-container");
+  if (!container) return;
+
+  const danger = currentEvent.dangerLevel || "low";
+  setBackground({ chapter: state.chapter, danger });
+
+  // Map immediate deltas to arrows: |Δ| 1-3 -> ▼/▲, 4-8 -> ▼▼/▲▲, 9+ -> ▼▼▼/▲▲▲
+  const formatArrows = (deltas) => {
+    const pills = [];
+    const mapDelta = (val, resourceName) => {
+      if (!val || val === 0) return null;
+      const isGain = val > 0;
+      const abs = Math.abs(val);
+      const symbol = isGain ? "▲" : "▼";
+      const repeat = abs >= 9 ? 3 : abs >= 4 ? 2 : 1;
+      const arrows = symbol.repeat(repeat);
+      return `<span class="arrow-pill ${isGain ? "gain" : "cost"}">${arrows} ${resourceName}</span>`;
+    };
+
+    if (deltas.power) pills.push(mapDelta(deltas.power, "Power"));
+    if (deltas.lifeSupport) pills.push(mapDelta(deltas.lifeSupport, "Life Support"));
+    if (deltas.radiationSafety) pills.push(mapDelta(deltas.radiationSafety, "Radiation"));
+    if (deltas.morale) pills.push(mapDelta(deltas.morale, "Mood"));
+
+    return pills.join(" ");
+  };
+
+  container.innerHTML = `
+    <div class="event-header-row">
+      <span class="danger-badge danger-${danger}">⚠️ ${danger.toUpperCase()} DANGER</span>
+      <span style="font-family:var(--font-family-hud); color:var(--color-text-dim); font-size:0.9rem;">
+        Sol ${state.sol} · What should the crew do?
+      </span>
+    </div>
+
+    <h2 style="font-size: 2rem; color: #ffffff; margin-bottom: 0.5rem;">${currentEvent.title}</h2>
+    <p class="event-intro-text">${explain(currentEvent.intro)}</p>
+
+    <!-- Crew Advice Speech Bubble -->
+    ${currentEvent.crewAdvice ? `
+      <div class="crew-speech-card">
+        <div>${renderAstronaut(currentEvent.crewAdvice.speaker, state.morale, 60)}</div>
+        <div class="crew-speech-content">
+          <div>
+            <span class="crew-speech-name">${currentEvent.crewAdvice.speaker}</span>
+            <span class="crew-speech-role">${currentEvent.crewAdvice.role}</span>
+          </div>
+          <p class="crew-speech-bubble">"${currentEvent.crewAdvice.text}"</p>
+        </div>
+      </div>
+    ` : ""}
+
+    <!-- Decision Cards -->
+    <div style="margin-bottom:0.6rem; display:flex; justify-content:space-between; align-items:center;">
+      <span style="font-size:0.9rem; font-weight:700; color:var(--color-text-dim);">Think about it: Choose one order</span>
+      <span style="font-size:0.8rem; color:var(--color-text-dim);">Legend: ▲ gain / ▼ cost</span>
+    </div>
+
+    <div class="decision-cards-grid" id="decision-cards-list">
+      ${currentEvent.choices.map((ch, idx) => `
+        <div class="choice-card-item" data-index="${idx}" data-choice-id="${ch.id}">
+          <div class="choice-card-top">
+            <span class="choice-card-label">${ch.label}</span>
+            <div class="choice-arrows-row">${formatArrows(ch.deltas || {})}</div>
+          </div>
+          <p class="choice-plain-text"><strong>What happens:</strong> ${explain(ch.plain || ch.label)}</p>
+        </div>
+      `).join("")}
+    </div>
+
+    <div style="text-align: right; margin-top: 1.5rem;">
+      <button id="btn-confirm-choice" class="btn btn-primary btn-lg" type="button" disabled>
+        Confirm Command Order ▶
+      </button>
+    </div>
+  `;
+
+  // Stagger reveal of decision cards
+  const cardElements = container.querySelectorAll(".choice-card-item");
+  reveal(cardElements, { stagger: 250 });
+
+  const confirmBtn = container.querySelector("#btn-confirm-choice");
+
+  cardElements.forEach((card) => {
+    card.addEventListener("click", () => {
+      const choiceId = card.dataset.choiceId;
+      selectedChoice = currentEvent.choices.find((c) => c.id === choiceId);
+
+      cardElements.forEach((c) => {
+        c.classList.remove("is-selected", "is-dimmed");
+        if (c !== card) c.classList.add("is-dimmed");
+      });
+      card.classList.add("is-selected");
+      confirmBtn.disabled = false;
+    });
+  });
+
+  confirmBtn.onclick = () => {
+    if (!selectedChoice) return;
+    confirmBtn.disabled = true;
+
+    // Apply choice via real engine
+    applyChoice(state, selectedChoice, currentEvent);
+    syncHUD();
+
+    // Transition to outcome screen
+    showScreen("outcome");
+    renderOutcomeScreen();
+  };
+}
+
+/**
+ * Phase 4: Routine Sol (Non-event day)
+ */
+function renderRoutinePhase() {
+  const viewRoutine = document.getElementById("view-routine");
+  if (!viewRoutine) return;
+  viewRoutine.hidden = false;
+
+  const beat = CAMPAIGN_BEATS[state.sol];
+  const statusBox = document.getElementById("routine-status-box");
+  const statusText = document.getElementById("routine-status-text");
+
+  if (statusText && beat) {
+    statusText.textContent = beat.habitatStatus || "Outpost systems holding steady. Morning chores completed.";
   }
 
-  if (!eventData) {
-    console.warn(`[EVENT LOOKUP WARNING] No event found for Sol ${state.sol}`);
+  const sleepBtn = document.getElementById("btn-routine-sleep");
+  if (sleepBtn) {
+    sleepBtn.onclick = () => {
+      advanceSol(state);
+      syncHUD();
+      showScreen("night");
+      renderNightReport();
+    };
+  }
+}
+
+/**
+ * Screen 4: Dedicated Decision Outcome Screen
+ */
+function renderOutcomeScreen() {
+  const res = state.lastResolution;
+  if (!res) {
+    showScreen("game");
     return;
   }
 
-  currentEvent = eventData;
-  state.awaitingDecision = true;
+  const solTag = document.getElementById("outcome-tag-sol");
+  const eventTitle = document.getElementById("outcome-event-title");
+  const choiceLabel = document.getElementById("outcome-choice-label");
+  const narrativeText = document.getElementById("outcome-narrative-text");
 
-  missionEventContainer.innerHTML = `
-    <section class="decision-section" aria-labelledby="decision-title">
-      <div class="decision-section-header">
-        <span class="decision-directive-tag">COMMAND DIRECTIVE REQUIRED // SOL ${state.sol < 10 ? "0" + state.sol : state.sol}</span>
-        <h3 id="decision-title" class="decision-section-title">${eventData.title}</h3>
-        <p class="decision-section-intro">${eventData.intro}</p>
-      </div>
+  if (solTag) solTag.textContent = `Sol ${state.sol} Command Order Executed`;
+  if (eventTitle) eventTitle.textContent = currentEvent?.title || "Decision Outcome";
+  if (choiceLabel) choiceLabel.textContent = `Order: ${res.choiceLabel}`;
+  if (narrativeText) narrativeText.innerHTML = explain(res.narrativeOutcome);
 
-      <!-- Decision Cards Grid -->
-      <div id="decision-cards-grid" class="decision-cards-grid" role="radiogroup" aria-label="Command Decision Options">
-        ${eventData.choices.map((choice, idx) => `
-          <div class="decision-card ${selectedChoiceId === choice.id ? "selected" : ""}" 
-               tabindex="0" 
-               role="radio" 
-               aria-checked="${selectedChoiceId === choice.id}" 
-               data-choice-id="${choice.id}">
-            <div class="decision-card-top">
-              <div class="decision-card-badge-row">
-                <span class="decision-card-badge">Option ${String.fromCharCode(65 + idx)}</span>
-                <div class="decision-card-check" aria-hidden="true">&#10003;</div>
-              </div>
-              <h4 class="decision-card-title">${choice.label}</h4>
-              <p class="decision-card-preview">${choice.preview}</p>
-              <div class="decision-card-tradeoff">
-                <strong>Trade-off:</strong> ${choice.tradeoff}
-              </div>
-            </div>
-            
-            <!-- Immediate Cost Badges -->
-            <div class="decision-card-deltas">
-              ${renderDeltaPills(choice.deltas)}
-            </div>
-          </div>
-        `).join("")}
-      </div>
+  // Before-and-after gauges
+  const updateOutcomeGauge = (type, beforeVal, afterVal, deltaVal) => {
+    const beforeEl = document.getElementById(`outcome-before-${type}`);
+    const afterEl = document.getElementById(`outcome-after-${type}`);
+    const deltaEl = document.getElementById(`outcome-delta-${type}`);
 
-      <!-- Confirmation Bar -->
-      <div class="decision-confirm-bar">
-        <div class="decision-selection-note">
-          ${selectedChoiceId 
-            ? `Selected: <strong>${eventData.choices.find(c => c.id === selectedChoiceId)?.label}</strong>` 
-            : `Select an order above to review its trade-offs.`}
-        </div>
-        <button id="btn-confirm-decision" class="btn btn-primary" type="button" ${!selectedChoiceId ? "disabled" : ""}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg>
-          Confirm Commander's Order
-        </button>
-      </div>
-    </section>
-  `;
-
-  // Attach card selection listeners
-  const cards = missionEventContainer.querySelectorAll(".decision-card");
-  cards.forEach((card) => {
-    const choiceId = card.getAttribute("data-choice-id");
-
-    const selectThisCard = () => {
-      selectedChoiceId = choiceId;
-      cards.forEach((c) => {
-        c.classList.remove("selected");
-        c.setAttribute("aria-checked", "false");
-      });
-      card.classList.add("selected");
-      card.setAttribute("aria-checked", "true");
-
-      const confirmBtn = document.getElementById("btn-confirm-decision");
-      if (confirmBtn) {
-        confirmBtn.removeAttribute("disabled");
+    if (beforeEl) beforeEl.textContent = `${beforeVal}%`;
+    if (afterEl) afterEl.textContent = `${afterVal}%`;
+    if (deltaEl) {
+      deltaEl.className = "delta-pill";
+      if (deltaVal > 0) {
+        deltaEl.classList.add("gain");
+        deltaEl.textContent = `+${deltaVal}%`;
+      } else if (deltaVal < 0) {
+        deltaEl.classList.add("cost");
+        deltaEl.textContent = `${deltaVal}%`;
+      } else {
+        deltaEl.classList.add("neutral");
+        deltaEl.textContent = "0%";
       }
-      const noteEl = missionEventContainer.querySelector(".decision-selection-note");
-      const chosen = eventData.choices.find((c) => c.id === choiceId);
-      if (noteEl && chosen) {
-        noteEl.innerHTML = `Selected: <strong>${chosen.label}</strong>`;
-      }
-    };
-
-    card.addEventListener("click", selectThisCard);
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        selectThisCard();
-      }
-    });
-  });
-
-  // Attach Confirmation Action -> Opens Stage 6 Outcome Screen!
-  const btnConfirm = document.getElementById("btn-confirm-decision");
-  btnConfirm?.addEventListener("click", () => {
-    if (!selectedChoiceId || !state.awaitingDecision) return;
-
-    const choice = eventData.choices.find((c) => c.id === selectedChoiceId);
-    if (!choice) return;
-
-    // Apply decision through gameEngine
-    const resolution = applyChoice(state, choice, eventData);
-
-    // Check if immediate critical grace triage was triggered
-    if (state.status === "critical_grace") {
-      openTriageModal();
-      return;
-    }
-
-    // Check if immediate failure occurred
-    if (state.status === "interrupted") {
-      showEndingScreen(evaluateMissionEnding(state));
-      return;
-    }
-
-    // Open Screen 5: Dedicated Outcome Screen
-    showOutcomeScreen(resolution, eventData);
-  });
-}
-
-/**
- * Dedicated Decision Outcome Screen Controller
- */
-function showOutcomeScreen(resolution, eventData) {
-  if (!resolution) return;
-
-  // Header & Narrative
-  if (outcomeSolBadge) {
-    outcomeSolBadge.textContent = `Sol ${state.sol < 10 ? "0" + state.sol : state.sol} Command Order Executed`;
-  }
-  if (outcomeEventTitle) {
-    outcomeEventTitle.textContent = eventData.title;
-  }
-  if (outcomeChoiceLabel) {
-    outcomeChoiceLabel.textContent = `Order: ${resolution.choiceLabel}`;
-  }
-  if (outcomeNarrativeText) {
-    outcomeNarrativeText.textContent = resolution.narrativeOutcome;
-  }
-
-  // Exact Before-and-After Resource Changes
-  const formatDelta = (delta, el) => {
-    if (!el) return;
-    if (delta > 0) {
-      el.className = "delta-pill pos";
-      el.textContent = `+${delta}%`;
-    } else if (delta < 0) {
-      el.className = "delta-pill neg";
-      el.textContent = `${delta}%`;
-    } else {
-      el.className = "delta-pill neutral";
-      el.textContent = "0%";
     }
   };
 
-  formatDelta(resolution.appliedDeltas.power, outcomeDeltaPower);
-  if (outcomeBeforePower) outcomeBeforePower.textContent = `${resolution.before.power}%`;
-  if (outcomeAfterPower) outcomeAfterPower.textContent = `${resolution.after.power}%`;
-
-  formatDelta(resolution.appliedDeltas.lifeSupport, outcomeDeltaLs);
-  if (outcomeBeforeLs) outcomeBeforeLs.textContent = `${resolution.before.lifeSupport}%`;
-  if (outcomeAfterLs) outcomeAfterLs.textContent = `${resolution.after.lifeSupport}%`;
-
-  formatDelta(resolution.appliedDeltas.radiationSafety, outcomeDeltaRad);
-  if (outcomeBeforeRad) outcomeBeforeRad.textContent = `${resolution.before.radiationSafety}%`;
-  if (outcomeAfterRad) outcomeAfterRad.textContent = `${resolution.after.radiationSafety}%`;
+  updateOutcomeGauge("power", res.before.power, res.after.power, res.appliedDeltas.power);
+  updateOutcomeGauge("ls", res.before.lifeSupport, res.after.lifeSupport, res.appliedDeltas.lifeSupport);
+  updateOutcomeGauge("rad", res.before.radiationSafety, res.after.radiationSafety, res.appliedDeltas.radiationSafety);
 
   // Crew Reaction
-  if (outcomeCrewName) outcomeCrewName.textContent = resolution.crewReaction.speaker;
-  if (outcomeCrewRole) outcomeCrewRole.textContent = resolution.crewReaction.role;
-  if (outcomeCrewQuote) outcomeCrewQuote.textContent = `"${resolution.crewReaction.text}"`;
+  const reaction = res.crewReaction || {
+    speaker: "Commander Rivera",
+    role: "Outpost Commander",
+    text: "Order executed. Systems holding steady."
+  };
+  const crewNameEl = document.getElementById("outcome-crew-name");
+  const crewRoleEl = document.getElementById("outcome-crew-role");
+  const crewQuoteEl = document.getElementById("outcome-crew-quote");
+  const avatarSlot = document.getElementById("outcome-crew-avatar-slot");
 
-  // Scientific Telemetry Blurb
-  if (outcomeScienceTag) {
-    outcomeScienceTag.textContent = `[${resolution.science.typeTag.toUpperCase().replace("_", " ")}]`;
+  if (crewNameEl) crewNameEl.textContent = reaction.speaker;
+  if (crewRoleEl) crewRoleEl.textContent = reaction.role;
+  if (crewQuoteEl) crewQuoteEl.innerHTML = `"${explain(reaction.text)}"`;
+  if (avatarSlot) avatarSlot.innerHTML = renderAstronaut(reaction.speaker, state.morale, 64);
+
+  // Science Note
+  const science = res.science || {
+    text: "Careful telemetry analysis ensures all outpost parameters stay within safety limits.",
+    typeTag: "Science idea"
+  };
+  const scienceTagEl = document.getElementById("outcome-science-tag");
+  const scienceTextEl = document.getElementById("outcome-science-text");
+  if (scienceTagEl) scienceTagEl.textContent = science.typeTag || "Science idea";
+  if (scienceTextEl) scienceTextEl.innerHTML = explain(science.text);
+
+  const continueBtn = document.getElementById("btn-outcome-continue");
+  if (continueBtn) {
+    continueBtn.onclick = () => {
+      // Advance Sol overnight
+      advanceSol(state);
+      syncHUD();
+      showScreen("night");
+      renderNightReport();
+    };
   }
-  if (outcomeScienceText) {
-    outcomeScienceText.textContent = resolution.science.text;
+}
+
+/**
+ * Screen 5: Night Report ("While the crew slept")
+ */
+function renderNightReport() {
+  const report = state.overnightReport;
+  const listEl = document.getElementById("night-report-list");
+  const solBadge = document.getElementById("night-sol-badge");
+  const continueBtn = document.getElementById("btn-night-continue");
+
+  if (solBadge) {
+    solBadge.textContent = `Sol ${state.sol < 10 ? "0" + state.sol : state.sol} Morning Telemetry`;
   }
 
-  // Button wording on Sol 30 vs mid-campaign
-  if (btnOutcomeContinue) {
-    if (state.sol === 30) {
-      btnOutcomeContinue.innerHTML = "View Mission Conclusion &rarr;";
-    } else {
-      btnOutcomeContinue.innerHTML = "Continue Mission &rarr;";
+  if (listEl) {
+    listEl.innerHTML = "";
+    const logItems = report?.log || [
+      "Heaters, lights and computers used some electricity (Power -1%).",
+      "Being far from home is tiring (Crew Morale -1)."
+    ];
+
+    logItems.forEach((entry, idx) => {
+      const li = document.createElement("li");
+      li.className = "night-report-item";
+      if (entry.includes("Delayed Consequence") || entry.includes("Remember")) {
+        li.classList.add("callback");
+      }
+      li.innerHTML = explain(entry);
+      listEl.appendChild(li);
+    });
+
+    // Stagger reveal of night report items
+    reveal(listEl.querySelectorAll(".night-report-item"), { stagger: 200 });
+  }
+
+  // Check ending condition if sol reached 30
+  if (state.sol > 30 || state.status === "interrupted") {
+    if (continueBtn) {
+      continueBtn.textContent = "View Mission Conclusion ▶";
+      continueBtn.onclick = () => {
+        const ending = evaluateMissionEnding(state);
+        showEndingScreen(ending);
+      };
+    }
+    return;
+  }
+
+  if (continueBtn) {
+    continueBtn.textContent = `Wake Up & Start Sol ${state.sol} ▶`;
+    continueBtn.onclick = () => {
+      startDayPhase("opening");
+    };
+  }
+}
+
+/**
+ * Screen 6: Sol 30 Ending Screen
+ */
+export function showEndingScreen(ending) {
+  state.lastEnding = ending;
+  saveGameState(state);
+
+  showScreen("ending");
+
+  const statusTag = document.getElementById("ending-status-tag");
+  const titleEl = document.getElementById("ending-title");
+  const subTitleEl = document.getElementById("ending-subtitle");
+  const narrativeEl = document.getElementById("ending-narrative");
+  const spiritBox = document.getElementById("ending-spirit-box");
+
+  if (statusTag) {
+    statusTag.className = `tag ${ending.code === 1 ? "tag-optimal" : ending.code === 2 ? "tag-caution" : "tag-critical"}`;
+    statusTag.textContent = ending.tag;
+  }
+  if (titleEl) titleEl.textContent = ending.title;
+  if (subTitleEl) subTitleEl.textContent = ending.subtitle;
+  if (narrativeEl) narrativeEl.innerHTML = explain(ending.narrative);
+  if (spiritBox) spiritBox.textContent = ending.crewSpiritLine || "";
+
+  // Crew Quote
+  const crewQuote = ending.crewQuote || { speaker: "Commander Elena Rivera", role: "Outpost Commander", text: "We made it through together." };
+  const nameEl = document.getElementById("ending-crew-name");
+  const roleEl = document.getElementById("ending-crew-role");
+  const textEl = document.getElementById("ending-crew-quote");
+  const avatarSlot = document.getElementById("ending-crew-avatar-slot");
+
+  if (nameEl) nameEl.textContent = crewQuote.speaker;
+  if (roleEl) roleEl.textContent = crewQuote.role;
+  if (textEl) textEl.innerHTML = `"${explain(crewQuote.text)}"`;
+  if (avatarSlot) avatarSlot.innerHTML = renderAstronaut(crewQuote.speaker, state.morale, 64);
+
+  // Final Meters
+  const valPEl = document.getElementById("ending-val-power");
+  const valLsEl = document.getElementById("ending-val-ls");
+  const valRadEl = document.getElementById("ending-val-rad");
+  if (valPEl) valPEl.textContent = `${state.resources.power}%`;
+  if (valLsEl) valLsEl.textContent = `${state.resources.lifeSupport}%`;
+  if (valRadEl) valRadEl.textContent = `${state.resources.radiationSafety}%`;
+
+  // Button to reflection
+  const reflBtn = document.getElementById("btn-to-reflection");
+  if (reflBtn) {
+    reflBtn.onclick = () => {
+      showScreen("reflection");
+      renderReflectionScreen(document.getElementById("reflection-container"), state, () => {
+        showScreen("journal");
+      });
+    };
+  }
+}
+
+/**
+ * =========================================================================
+ * MODALS SETUP (About, Radio, Audit, Triage, Restart)
+ * =========================================================================
+ */
+function initModals() {
+  // 1. About Modal
+  const modalAbout = document.getElementById("modal-about");
+  const linkAbout = document.getElementById("link-about-modal");
+  const closeAbout = document.getElementById("btn-close-about");
+  const doneAbout = document.getElementById("btn-modal-about-done");
+
+  const openAbout = (e) => {
+    e?.preventDefault();
+    if (modalAbout) modalAbout.hidden = false;
+  };
+  linkAbout?.addEventListener("click", openAbout);
+  closeAbout?.addEventListener("click", () => { modalAbout.hidden = true; });
+  doneAbout?.addEventListener("click", () => { modalAbout.hidden = true; });
+
+  // Populate sources & tags in About modal
+  const tagsList = document.getElementById("about-tags-list");
+  if (tagsList) {
+    tagsList.innerHTML = Object.values(TAG_DEFINITIONS).map((t) => `
+      <div style="background:rgba(15,25,45,0.6); padding:0.6rem 0.85rem; border-radius:var(--radius-sm); border-left:3px solid var(--color-space-medium);">
+        <span class="tag ${t.badgeClass}">${t.label}</span>
+        <p style="font-size:0.85rem; color:var(--color-text-secondary); margin-top:0.25rem;">${t.description}</p>
+      </div>
+    `).join("");
+  }
+
+  const sourcesList = document.getElementById("about-sources-list");
+  if (sourcesList) {
+    sourcesList.innerHTML = Object.values(SOURCES).map((s) => `
+      <div style="background:rgba(15,25,45,0.6); padding:0.6rem 0.85rem; border-radius:var(--radius-sm);">
+        <strong style="color:#ffffff; font-size:0.95rem;">${s.title}</strong>
+        <p style="font-size:0.85rem; color:var(--color-text-secondary); margin:0.2rem 0;">${s.summary}</p>
+        <span style="font-size:0.75rem; color:var(--color-text-dim);">Reference Date: ${s.eventDate}</span>
+      </div>
+    `).join("");
+  }
+
+  // 2. Radio Modal ("Check the radio")
+  const modalRadio = document.getElementById("modal-radio");
+  const btnHudRadio = document.getElementById("btn-hud-radio");
+  const closeRadio = document.getElementById("btn-close-radio");
+  const doneRadio = document.getElementById("btn-modal-radio-done");
+
+  btnHudRadio?.addEventListener("click", () => {
+    if (modalRadio) {
+      modalRadio.hidden = false;
+      renderRadioModalContent();
+    }
+  });
+  closeRadio?.addEventListener("click", () => { modalRadio.hidden = true; });
+  doneRadio?.addEventListener("click", () => { modalRadio.hidden = true; });
+
+  function renderRadioModalContent() {
+    const noticeEl = document.getElementById("radio-status-notice");
+    if (noticeEl) {
+      if (state.comm.status === "restored") {
+        noticeEl.innerHTML = `
+          <h3 style="color:#10b981;">Radio Status: Two-Way Link Restored!</h3>
+          <p>Our 3.2-meter high-gain antenna is locked onto NASA's Deep Space Network.</p>
+        `;
+      } else if (state.comm.status === "intermittent") {
+        noticeEl.innerHTML = `
+          <h3 style="color:#f59e0b;">Radio Status: Backup Beacon Working!</h3>
+          <p>The dish is aligned with Earth. Our carrier beacon is active!</p>
+        `;
+      } else {
+        noticeEl.innerHTML = `
+          <h3 style="color:#38bdf8;">Radio Status: Listen Only</h3>
+          <p>Our big antenna is broken, so Earth cannot hear us yet. But our small listening antenna can still receive Houston's transmissions!</p>
+        `;
+      }
+    }
+
+    const messagesList = document.getElementById("radio-messages-list");
+    if (messagesList) {
+      const history = state.commHistory || [];
+      if (history.length === 0) {
+        messagesList.innerHTML = `<p style="color:var(--color-text-dim); font-style:italic;">No messages delivered yet. First transmission expected on Sol 3.</p>`;
+      } else {
+        messagesList.innerHTML = history.map((m) => `
+          <div style="background:rgba(15,25,45,0.7); border:1px solid var(--color-space-medium); border-radius:var(--radius-sm); padding:0.85rem;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:0.25rem;">
+              <strong style="color:#38bdf8; font-size:0.95rem;">${m.sender}</strong>
+              <span style="font-size:0.75rem; color:var(--color-text-dim);">Delivered Sol ${m.deliveredOnSol}</span>
+            </div>
+            <p style="font-size:0.95rem; color:#f8fafc; line-height:1.45;">${m.activeBody || m.body}</p>
+          </div>
+        `).join("");
+      }
     }
   }
 
-  // Show the Screen
-  showScreen("screen-outcome");
-}
+  // 3. Audit Modal ("Why did my meters change?")
+  const modalAudit = document.getElementById("modal-audit");
+  const btnHudAudit = document.getElementById("btn-hud-audit");
+  const closeAudit = document.getElementById("btn-close-audit");
+  const doneAudit = document.getElementById("btn-modal-audit-done");
 
-/**
- * Mid-Campaign Emergency Lifeboat Triage Modal Controller
- */
-function openTriageModal() {
-  if (!modalTriage || !triageCardsGrid) return;
-  selectedTriageId = null;
-  if (btnConfirmTriage) btnConfirmTriage.disabled = true;
-
-  triageCardsGrid.innerHTML = EMERGENCY_TRIAGE_OPTIONS.map((opt) => `
-    <div class="triage-card" data-triage-id="${opt.id}" tabindex="0" role="radio" aria-checked="false">
-      <div class="triage-card-header">
-        <h4 class="triage-card-title">${opt.label}</h4>
-        <div class="decision-card-check" aria-hidden="true">&#10003;</div>
-      </div>
-      <p style="font-size:0.875rem; color:var(--color-text-secondary); line-height:1.45;">${opt.desc}</p>
-      <div class="triage-card-tradeoff">
-        <strong>Trade-off:</strong> ${opt.tradeoff}
-      </div>
-      <div class="decision-card-deltas">
-        ${renderDeltaPills(opt.deltas)}
-      </div>
-    </div>
-  `).join("");
-
-  const cards = triageCardsGrid.querySelectorAll(".triage-card");
-  cards.forEach((card) => {
-    const selectThis = () => {
-      selectedTriageId = card.getAttribute("data-triage-id");
-      cards.forEach((c) => {
-        c.classList.remove("selected");
-        c.setAttribute("aria-checked", "false");
-      });
-      card.classList.add("selected");
-      card.setAttribute("aria-checked", "true");
-      if (btnConfirmTriage) btnConfirmTriage.disabled = false;
-    };
-    card.addEventListener("click", selectThis);
-    card.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" || e.key === " ") {
-        e.preventDefault();
-        selectThis();
-      }
-    });
+  btnHudAudit?.addEventListener("click", () => {
+    if (modalAudit) {
+      modalAudit.hidden = false;
+      renderAuditFeed();
+    }
   });
+  closeAudit?.addEventListener("click", () => { modalAudit.hidden = true; });
+  doneAudit?.addEventListener("click", () => { modalAudit.hidden = true; });
 
-  openModal(modalTriage, btnConfirmTriage);
-}
-
-/**
- * Sol 30 Dedicated Mission Ending Screen Controller (Stage 9)
- */
-function showEndingScreen(endingData) {
-  if (!endingData) return;
-
-  if (endingBadgeTag) {
-    endingBadgeTag.textContent = `ARES-1 CAMPAIGN CONCLUSION // SOL ${state.sol < 10 ? "0" + state.sol : state.sol}`;
-  }
-  if (endingTitle) endingTitle.textContent = endingData.title;
-  if (endingSubtitle) endingSubtitle.textContent = endingData.subtitle;
-
-  if (endingStatusTag) {
-    endingStatusTag.className = `tag ${endingData.tagClass}`;
-    endingStatusTag.textContent = `[${endingData.tag}]`;
-  }
-
-  if (endingNarrative) endingNarrative.textContent = endingData.narrative;
-  if (endingCrewSpeaker) endingCrewSpeaker.textContent = endingData.crewQuote.speaker;
-  if (endingCrewRole) endingCrewRole.textContent = endingData.crewQuote.role;
-  if (endingCrewQuote) endingCrewQuote.textContent = `"${endingData.crewQuote.text}"`;
-  if (endingScienceTakeaway) endingScienceTakeaway.textContent = endingData.scienceTakeaway;
-
-  // Final telemetry values & band tags
-  const pBand = getBandClassAndLabel(endingData.stats.power);
-  if (endingValPower) endingValPower.textContent = `${endingData.stats.power}%`;
-  if (endingPowerTag) {
-    endingPowerTag.className = pBand.className;
-    endingPowerTag.textContent = pBand.label;
-  }
-
-  const lsBand = getBandClassAndLabel(endingData.stats.lifeSupport);
-  if (endingValLs) endingValLs.textContent = `${endingData.stats.lifeSupport}%`;
-  if (endingLsTag) {
-    endingLsTag.className = lsBand.className;
-    endingLsTag.textContent = lsBand.label;
-  }
-
-  const radBand = getBandClassAndLabel(endingData.stats.radiationSafety);
-  if (endingValRad) endingValRad.textContent = `${endingData.stats.radiationSafety}%`;
-  if (endingRadTag) {
-    endingRadTag.className = radBand.className;
-    endingRadTag.textContent = radBand.label;
-  }
-
-  // Objectives checklist
-  if (endingObjectivesCount) {
-    endingObjectivesCount.textContent = `${endingData.stats.completedObjectivesCount} / ${endingData.stats.totalObjectives} COMPLETED`;
-  }
-
-  const objectiveItems = [
-    { key: "commsRestored", label: "Primary Mars-Earth Carrier Link Synchronized" },
-    { key: "antennaAligned", label: "High-Gain Parabolic Antenna Azimuth Calibrated" },
-    { key: "researchSamples", label: "Martian Surface & Frost Core Samples Analyzed (>= 2)" },
-    { key: "panelsUnderstood", label: "Solar Array Dust Vortex Mechanics Inspected" },
-    { key: "shelterProtocolsMaintained", label: "Radiation Storm Shelter Protocols Maintained (SPE)" }
-  ];
-
-  if (endingObjectivesList) {
-    endingObjectivesList.innerHTML = objectiveItems.map((obj) => {
-      const isCompleted = !!state.objectives[obj.key];
+  function renderAuditFeed() {
+    const list = document.getElementById("audit-feed-list");
+    if (!list) return;
+    const items = state.recentChanges || [];
+    list.innerHTML = items.slice(0, 15).map((ch) => {
+      const d = ch.deltas || {};
+      const parts = [];
+      if (d.power) parts.push(`Power ${d.power > 0 ? "+" : ""}${d.power}%`);
+      if (d.lifeSupport) parts.push(`Life Support ${d.lifeSupport > 0 ? "+" : ""}${d.lifeSupport}%`);
+      if (d.radiationSafety) parts.push(`Rad ${d.radiationSafety > 0 ? "+" : ""}${d.radiationSafety}%`);
+      if (d.morale) parts.push(`Mood ${d.morale > 0 ? "+" : ""}${d.morale}`);
       return `
-        <li class="ending-objective-item ${isCompleted ? 'completed' : 'failed'}">
-          <span style="color:var(--color-text-primary);">${obj.label}</span>
-          <span class="objective-icon-status" style="color: ${isCompleted ? 'var(--color-status-optimal)' : 'var(--color-text-dim)'};">
-            ${isCompleted ? '&#10003; COMPLETED' : '&#10005; INCOMPLETE'}
+        <div style="background:rgba(15,25,45,0.6); padding:0.6rem 0.85rem; border-radius:var(--radius-sm); display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <strong style="color:#ffffff; font-size:0.95rem;">${ch.cause}</strong>
+            <span style="font-size:0.75rem; color:var(--color-text-dim); margin-left:0.4rem;">Sol ${ch.sol}</span>
+          </div>
+          <span style="font-family:var(--font-family-hud); font-size:0.85rem; color:#93c5fd;">
+            ${parts.length > 0 ? parts.join(" · ") : "No Change"}
           </span>
-        </li>
+        </div>
       `;
     }).join("");
   }
 
-  // Render SVG Mission Patch
-  if (endingBadgeContainer) {
-    endingBadgeContainer.className = `ending-badge-container ${endingData.badgeClass}`;
-    if (endingData.id === "ending_optimal") {
-      endingBadgeContainer.innerHTML = `
-        <svg width="105" height="105" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-          <circle cx="50" cy="50" r="46" stroke="#27AE60" stroke-width="3" fill="rgba(39, 174, 96, 0.15)"/>
-          <circle cx="50" cy="50" r="38" stroke="rgba(255,255,255,0.2)" stroke-width="1" stroke-dasharray="3 3"/>
-          <path d="M50 22 L50 36 M42 27 L58 27" stroke="#69F0AE" stroke-width="2" stroke-linecap="round"/>
-          <path d="M42 16 A12 12 0 0 1 58 16" stroke="#69F0AE" stroke-width="2" fill="none"/>
-          <path d="M36 10 A20 20 0 0 1 64 10" stroke="#69F0AE" stroke-width="2" fill="none"/>
-          <path d="M26 72 Q50 48 74 72 Z" fill="#C65A35" stroke="#E17A43" stroke-width="2"/>
-          <line x1="20" y1="72" x2="80" y2="72" stroke="#E17A43" stroke-width="2"/>
-          <circle cx="34" cy="40" r="2.5" fill="#FFD54F"/>
-          <circle cx="44" cy="34" r="2.5" fill="#FFD54F"/>
-          <circle cx="56" cy="34" r="2.5" fill="#FFD54F"/>
-          <circle cx="66" cy="40" r="2.5" fill="#FFD54F"/>
-          <text x="50" y="85" font-family="monospace" font-size="7.5" font-weight="bold" fill="#69F0AE" text-anchor="middle">ARES // SOL 30</text>
-        </svg>
-      `;
-    } else if (endingData.id === "ending_pragmatic") {
-      endingBadgeContainer.innerHTML = `
-        <svg width="105" height="105" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-          <polygon points="50,6 90,26 90,74 50,94 10,74 10,26" stroke="#F39C12" stroke-width="3" fill="rgba(243, 156, 18, 0.15)"/>
-          <path d="M50 24 L50 38" stroke="#FFD54F" stroke-width="2" stroke-linecap="round"/>
-          <path d="M40 18 A14 14 0 0 1 60 18" stroke="#FFD54F" stroke-width="2" fill="none"/>
-          <path d="M30 68 Q50 50 70 68 Z" fill="#9E3D2F" stroke="#F39C12" stroke-width="2"/>
-          <line x1="20" y1="68" x2="80" y2="68" stroke="#F39C12" stroke-width="2"/>
-          <circle cx="38" cy="44" r="2" fill="#FFD54F"/>
-          <circle cx="62" cy="44" r="2" fill="#FFD54F"/>
-          <text x="50" y="84" font-family="monospace" font-size="7" font-weight="bold" fill="#FFD54F" text-anchor="middle">ARES-1 SURVIVED</text>
-        </svg>
-      `;
-    } else {
-      endingBadgeContainer.innerHTML = `
-        <svg width="105" height="105" viewBox="0 0 100 100" fill="none" aria-hidden="true">
-          <polygon points="50,6 92,28 92,72 50,94 8,72 8,28" stroke="#E74C3C" stroke-width="3" fill="rgba(231, 76, 60, 0.15)"/>
-          <polygon points="50,22 76,68 24,68" stroke="#FF8A80" stroke-width="2.5" fill="none"/>
-          <line x1="50" y1="36" x2="50" y2="52" stroke="#FF8A80" stroke-width="3" stroke-linecap="round"/>
-          <circle cx="50" cy="60" r="2" fill="#FF8A80"/>
-          <text x="50" y="84" font-family="monospace" font-size="7" font-weight="bold" fill="#FF8A80" text-anchor="middle">SUSPENDED</text>
-        </svg>
-      `;
-    }
-  }
+  // 4. Restart Confirmation Modal
+  const modalRestart = document.getElementById("modal-restart");
+  const btnHudRestart = document.getElementById("btn-hud-restart");
+  const closeRestart = document.getElementById("btn-close-restart");
+  const cancelRestart = document.getElementById("btn-cancel-restart");
+  const confirmRestart = document.getElementById("btn-confirm-restart");
 
-  showScreen("screen-ending");
-}
-
-/**
- * Handle Sending Earth Status Query
- */
-function handleSendQuery() {
-  const result = sendStatusQuery(state);
-  if (!result.success) {
-    alert("Query already in transit to Earth. Radio telemetry carrier wave is traveling across interplanetary space.");
-    return;
-  }
-  syncUIWithState();
-}
-
-/**
- * Setup Screen Transitions & Modal Listeners
- */
-function setupEventListeners() {
-  btnStartMission?.addEventListener("click", () => showScreen("screen-briefing"));
-  btnBriefingBack?.addEventListener("click", () => showScreen("screen-welcome"));
-  btnBeginMission?.addEventListener("click", () => {
-    state.status = "active";
-    saveGameState(state);
-    showScreen("screen-game");
-    switchTab("mission");
-    syncUIWithState();
-    renderSolView();
+  btnHudRestart?.addEventListener("click", () => {
+    if (modalRestart) modalRestart.hidden = false;
   });
-
-  tabBtns.mission?.addEventListener("click", () => switchTab("mission"));
-  tabBtns.resources?.addEventListener("click", () => switchTab("resources"));
-  tabBtns.log?.addEventListener("click", () => switchTab("log"));
-
-  // Outcome Screen Continue Action -> Advances Sol & returns to Mission Tab OR Final Ending
-  btnOutcomeContinue?.addEventListener("click", () => {
-    if (state.sol === 30) {
-      state.status = "completed";
-      saveGameState(state);
-      showEndingScreen(evaluateMissionEnding(state));
-      return;
-    }
-
-    advanceSol(state);
-    selectedChoiceId = null;
-
-    if (state.status === "interrupted") {
-      showEndingScreen(evaluateMissionEnding(state));
-      return;
-    }
-
-    showScreen("screen-game");
-    switchTab("mission");
-    syncUIWithState();
-    renderSolView();
-  });
-
-  // Earth Communications Actions
-  btnSendCommQuery?.addEventListener("click", handleSendQuery);
-  btnHudQuery?.addEventListener("click", () => {
-    switchTab("log");
-    handleSendQuery();
-  });
-  hudCommBadge?.addEventListener("click", () => {
-    showScreen("screen-game");
-    switchTab("log");
-  });
-
-  // Emergency Lifeboat Triage Confirm Action
-  btnConfirmTriage?.addEventListener("click", () => {
-    if (!selectedTriageId) return;
-    applyEmergencyTriage(state, selectedTriageId);
-    closeModal(modalTriage);
-    syncUIWithState();
-
-    if (state.status === "interrupted") {
-      showEndingScreen(evaluateMissionEnding(state));
-    } else {
-      renderSolView();
-    }
-  });
-
-  // Ending Screen Actions
-  btnEndingRestart?.addEventListener("click", () => {
+  closeRestart?.addEventListener("click", () => { modalRestart.hidden = true; });
+  cancelRestart?.addEventListener("click", () => { modalRestart.hidden = true; });
+  confirmRestart?.addEventListener("click", () => {
     clearSavedGame();
-    state = createInitialState();
-    selectedChoiceId = null;
-    currentEvent = null;
-    showScreen("screen-welcome");
-    syncUIWithState();
-  });
-
-  btnEndingReviewLog?.addEventListener("click", () => {
-    showScreen("screen-game");
-    switchTab("log");
-  });
-
-  // Modal: About & Sources
-  btnAbout?.addEventListener("click", () => openModal(modalAbout, btnCloseModal));
-  btnCloseModal?.addEventListener("click", () => closeModal(modalAbout));
-  btnModalDone?.addEventListener("click", () => closeModal(modalAbout));
-  modalAbout?.addEventListener("click", (e) => {
-    if (e.target === modalAbout) closeModal(modalAbout);
-  });
-
-  // Modal: Restart Game
-  btnRestartGame?.addEventListener("click", () => openModal(modalRestart, btnCancelRestart));
-  btnCloseRestart?.addEventListener("click", () => closeModal(modalRestart));
-  btnCancelRestart?.addEventListener("click", () => closeModal(modalRestart));
-  modalRestart?.addEventListener("click", (e) => {
-    if (e.target === modalRestart) closeModal(modalRestart);
-  });
-
-  btnConfirmRestart?.addEventListener("click", () => {
-    closeModal(modalRestart);
-    clearSavedGame();
-    state = createInitialState();
-    selectedChoiceId = null;
-    currentEvent = null;
-    showScreen("screen-welcome");
-    syncUIWithState();
-  });
-
-  window.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") {
-      if (!modalAbout.hidden) closeModal(modalAbout);
-      if (!modalRestart.hidden) closeModal(modalRestart);
-    }
+    window.location.reload();
   });
 }
 
 /**
- * Populate Crew Cards in Stage 2 Briefing
- */
-function renderCrewDossier() {
-  if (!crewDossierGrid) return;
-  const getAvatarSvg = (iconType) => {
-    switch (iconType) {
-      case "commander":
-        return `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle>`;
-      case "scientist":
-        return `<circle cx="12" cy="12" r="9"></circle><path d="m4.93 4.93 4.24 4.24"></path><path d="m14.83 9.17 4.24-4.24"></path><path d="m14.83 14.83 4.24 4.24"></path><path d="m9.17 14.83-4.24 4.24"></path>`;
-      case "engineer":
-        return `<rect x="2" y="6" width="20" height="12" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path>`;
-      case "medic":
-        return `<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path>`;
-      default:
-        return `<circle cx="12" cy="12" r="10"></circle>`;
-    }
-  };
-
-  crewDossierGrid.innerHTML = CREW.map((member) => `
-    <article class="crew-card">
-      <div class="crew-card-top">
-        <div class="crew-avatar" style="border-color: ${member.badgeColor}; color: ${member.badgeColor};" aria-hidden="true">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            ${getAvatarSvg(member.avatarIcon)}
-          </svg>
-        </div>
-        <div class="crew-details">
-          <span class="crew-name">${member.name}</span>
-          <span class="crew-role">${member.role}</span>
-        </div>
-      </div>
-      <p class="crew-bio">${member.bio}</p>
-      <div class="crew-quote">"${member.quote}"</div>
-    </article>
-  `).join("");
-}
-
-/**
- * Populate About Modal (Stage 1)
- */
-function initAboutModalContent() {
-  if (disclaimerText && FICTIONAL_DISCLAIMER) {
-    disclaimerText.textContent = FICTIONAL_DISCLAIMER;
-  }
-  if (tagLegendContainer) {
-    tagLegendContainer.innerHTML = Object.entries(TAG_DEFINITIONS)
-      .map(([key, tag]) => `
-        <div class="tag-legend-item">
-          <span class="tag ${tag.badgeClass}">[${tag.label}]</span>
-          <p class="tag-legend-desc">${tag.description}</p>
-        </div>
-      `)
-      .join("");
-  }
-}
-
-/**
- * Bootstrap Application
+ * =========================================================================
+ * APPLICATION ENTRY POINT
+ * =========================================================================
  */
 function init() {
-  state = loadGameState();
-  if (!state) {
+  // 1. Initialize modular background
+  const stageEl = document.getElementById("mars-stage");
+  initBackground(stageEl);
+
+  // 2. Initialize accessible glossary tooltips
+  initGlossary();
+
+  // 3. Initialize modal dialogs
+  initModals();
+
+  // 4. Load saved game or create initial state
+  const saved = loadGameState();
+  if (saved) {
+    state = saved;
+  } else {
     state = createInitialState();
   }
 
-  renderCrewDossier();
-  initAboutModalContent();
-  setupEventListeners();
+  // 5. Wire Welcome Screen actions
+  const startBtn = document.getElementById("btn-start-mission");
+  const replayBtn = document.getElementById("btn-replay-intro");
 
-  // Initialize Developer Tools (Stage 10)
-  initDevTools({
-    getState: () => state,
-    setState: (newState) => { state = newState; },
-    syncUI: syncUIWithState,
-    renderSol: (evOverride) => renderSolView(evOverride),
-    showEnding: (endingData) => showEndingScreen(endingData),
-    showScreen: (screenId) => showScreen(screenId)
+  startBtn?.addEventListener("click", () => {
+    showScreen("briefing");
+    renderBriefingStep(1);
   });
 
-  // Screen restoration based on saved state
-  if (state.status === "completed" || state.currentScreen === "ending") {
-    showEndingScreen(evaluateMissionEnding(state));
-  } else if (state.status === "interrupted") {
-    showEndingScreen(evaluateMissionEnding(state));
-  } else if (state.status === "active" || state.status === "critical_grace") {
-    showScreen("screen-game");
-    switchTab(state.currentTab || "mission");
-    syncUIWithState();
-    renderSolView();
-  } else {
-    showScreen("screen-welcome");
-    syncUIWithState();
-  }
+  replayBtn?.addEventListener("click", () => {
+    playIntroCinematic();
+  });
 
-  console.log("ARES: The Last Signal fully loaded. Stages 1–10 operational.");
+  // Briefing carousel navigation
+  const prevBtn = document.getElementById("btn-briefing-prev");
+  const nextBtn = document.getElementById("btn-briefing-next");
+
+  prevBtn?.addEventListener("click", () => {
+    if (briefingStep > 1) renderBriefingStep(briefingStep - 1);
+  });
+
+  nextBtn?.addEventListener("click", () => {
+    if (briefingStep < 3) {
+      renderBriefingStep(briefingStep + 1);
+    } else {
+      // Start mission at Sol 1
+      state.status = "active";
+      saveGameState(state);
+      startDayPhase("opening");
+    }
+  });
+
+  // 6. Developer Tools integration
+  initDevTools({
+    getState: () => state,
+    setState: (ns) => { state = ns; },
+    syncUI: () => syncHUD(),
+    renderSol: () => startDayPhase("opening"),
+    showEnding: (end) => showEndingScreen(end),
+    showScreen: (sc) => showScreen(sc),
+    startDayPhase: (p, id) => startDayPhase(p, id)
+  });
+
+  // 7. Route to saved state or show intro
+  const introSeen = localStorage.getItem("ares_intro_seen");
+
+  if (state.status === "completed") {
+    const ending = evaluateMissionEnding(state);
+    if (state.reflection?.done) {
+      showScreen("journal");
+      renderJournalScreen(document.getElementById("journal-container"), state);
+    } else {
+      showEndingScreen(ending);
+    }
+  } else if (state.status === "active") {
+    startDayPhase(state.phase || "opening");
+  } else {
+    // New player: play intro cinematic on first visit
+    if (!introSeen) {
+      playIntroCinematic();
+    } else {
+      showScreen("welcome");
+    }
+  }
 }
 
+// Boot application when DOM is ready
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {

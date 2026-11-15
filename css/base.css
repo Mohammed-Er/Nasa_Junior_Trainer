@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ARES: The Last Signal - Base Styles, Reset & Layout
+   ARES: The Last Signal - Base Styles, Reset & Layout (v3)
    ========================================================================== */
 
 *,
@@ -17,15 +17,26 @@ html, body {
   background-color: var(--color-space-black);
   color: var(--color-text-primary);
   font-family: var(--font-family-base);
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 18px;
+  line-height: var(--line-height-base);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Accessible outline for keyboard navigation */
+@media (max-width: 768px) {
+  html, body {
+    font-size: 17px;
+  }
+}
+
+h1, h2, h3, h4, h5, h6, .btn {
+  font-family: var(--font-family-display);
+  letter-spacing: 0.02em;
+}
+
+/* Accessible outline for keyboard navigation (44px min tap targets) */
 :focus-visible {
-  outline: 2px solid var(--color-mars-orange);
+  outline: 3px solid var(--color-mars-orange);
   outline-offset: 3px;
 }
 
@@ -36,7 +47,82 @@ html, body {
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: var(--color-space-deep);
+  background-color: transparent;
+  z-index: 5;
+}
+
+/* ==========================================================================
+   MARS STAGE (Modular Background & Particles)
+   ========================================================================== */
+#mars-stage {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: var(--color-space-black);
+}
+
+.stage-layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.stage-landscape {
+  background-image: url("../assets/images/mars-landscape.svg");
+  background-size: cover;
+  background-position: bottom center;
+  background-repeat: no-repeat;
+  transition: filter 1.5s ease;
+  z-index: 1;
+}
+
+.stage-particles {
+  z-index: 2;
+  pointer-events: none;
+}
+
+.stage-vignette {
+  z-index: 3;
+  background: radial-gradient(circle at 50% 30%, transparent 40%, rgba(4, 8, 16, 0.75) 90%);
+  transition: all 1.2s ease;
+}
+
+.stage-scrim {
+  z-index: 4;
+  background: rgba(6, 14, 26, 0.45);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+/* Chapter Tints */
+#mars-stage.chapter-1 .stage-vignette {
+  background: radial-gradient(circle at 50% 30%, rgba(225, 122, 67, 0.12) 0%, rgba(4, 8, 16, 0.8) 85%);
+}
+
+#mars-stage.chapter-2 .stage-vignette {
+  background: radial-gradient(circle at 50% 30%, rgba(245, 158, 11, 0.08) 0%, rgba(4, 8, 16, 0.8) 85%);
+}
+
+#mars-stage.chapter-3 .stage-vignette {
+  background: radial-gradient(circle at 50% 30%, rgba(239, 68, 68, 0.22) 0%, rgba(30, 10, 10, 0.88) 85%);
+}
+
+#mars-stage.chapter-4 .stage-vignette {
+  background: radial-gradient(circle at 50% 30%, rgba(168, 85, 247, 0.12) 0%, rgba(8, 6, 20, 0.85) 85%);
+}
+
+#mars-stage.chapter-5 .stage-vignette {
+  background: radial-gradient(circle at 50% 30%, rgba(14, 165, 233, 0.1) 0%, rgba(4, 8, 16, 0.92) 85%);
+}
+
+#mars-stage.danger-high .stage-vignette {
+  box-shadow: inset 0 0 70px rgba(239, 68, 68, 0.55);
+  animation: pulse-danger 3s infinite ease-in-out;
 }
 
 /* Screen Switcher System */
@@ -46,6 +132,8 @@ html, body {
   min-height: 100vh;
   opacity: 0;
   transition: opacity var(--transition-normal);
+  position: relative;
+  z-index: 10;
 }
 
 .screen.active {
@@ -54,57 +142,179 @@ html, body {
   opacity: 1;
 }
 
-/* Utility hidden attribute enforcement */
 [hidden] {
   display: none !important;
 }
 
-/* Typography Defaults */
-h1, h2, h3, h4, h5, h6 {
+/* Interactive Glossary Term Button & Popover */
+.term-btn {
+  background: none;
+  border: none;
+  border-bottom: 2px dotted #38bdf8;
+  color: #38bdf8;
+  font-family: inherit;
+  font-size: inherit;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  cursor: pointer;
+  padding: 0 2px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  transition: all var(--transition-fast);
 }
 
-p {
+.term-btn:hover {
+  color: #7dd3fc;
+  background-color: rgba(56, 189, 248, 0.15);
+  border-radius: var(--radius-sm);
+}
+
+.glossary-popover {
+  position: fixed;
+  background-color: #0b1a2e;
+  border: 2px solid #38bdf8;
+  border-radius: var(--radius-md);
+  padding: 0.9rem 1.1rem;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.8);
+  z-index: 1000;
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  animation: pop-in 200ms cubic-bezier(0.2, 0.9, 0.3, 1.2) forwards;
+}
+
+.popover-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding-bottom: 0.3rem;
+}
+
+.popover-term {
+  font-family: var(--font-family-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #38bdf8;
+  letter-spacing: 0.05em;
+}
+
+.popover-close {
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.popover-body {
+  font-size: 0.9rem;
+  line-height: 1.45;
   color: var(--color-text-secondary);
 }
 
-a {
-  color: var(--color-mars-orange);
-  text-decoration: none;
-  transition: color var(--transition-fast);
+/* In-game Toast Notification Container */
+#toast-container {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  z-index: 9999;
+  pointer-events: none;
 }
 
-a:hover {
+.toast {
+  background-color: rgba(10, 22, 40, 0.95);
+  border: 1px solid var(--color-space-medium);
+  border-radius: var(--radius-pill);
+  padding: 0.65rem 1.4rem;
   color: var(--color-text-primary);
-  text-decoration: underline;
+  font-size: 0.95rem;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(6px);
+  animation: pop-in 250ms ease forwards;
+  pointer-events: auto;
+  text-align: center;
 }
 
-/* Responsive Container */
-.container {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
+.toast-info { border-color: var(--color-status-info); }
+.toast-success { border-color: var(--color-status-optimal); color: #6ee7b7; }
+.toast-warning { border-color: var(--color-status-caution); color: #fde047; }
+.toast-error { border-color: var(--color-status-critical); color: #fca5a5; }
 
-@media (max-width: 768px) {
-  html {
-    font-size: 15px;
+/* Print Media Styles (Clean, Single Page, White Background) */
+@media print {
+  body, html {
+    background: #ffffff !important;
+    color: #111111 !important;
+    font-size: 12pt !important;
   }
-  .container {
-    padding: 0 1rem;
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+  #mars-stage,
+  .no-print,
+  .hud-header,
+  .briefing-actions,
+  #dev-tools-wrapper,
+  .btn,
+  #screen-welcome,
+  #screen-briefing,
+  #screen-game,
+  #screen-outcome,
+  #screen-night,
+  #screen-ending,
+  #screen-reflection,
+  .modal-overlay {
+    display: none !important;
   }
+
+  #screen-journal {
+    display: block !important;
+    opacity: 1 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .journal-page-wrapper {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .journal-print-card {
+    background: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #222222 !important;
+    box-shadow: none !important;
+    padding: 1.5rem !important;
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  .journal-header {
+    border-bottom: 2px solid #222222 !important;
+  }
+
+  .journal-title {
+    color: #111111 !important;
+    font-size: 18pt !important;
+  }
+
+  .journal-metrics-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    border: 1px solid #444444 !important;
+    background: #f8fafc !important;
+  }
+
+  .journal-metric {
+    border-right: 1px solid #444444 !important;
+  }
+
+  .jm-label { color: #555555 !important; }
+  .jm-value { color: #111111 !important; font-weight: bold !important; }
+  .qa-q { color: #111111 !important; font-weight: bold !important; }
+  .qa-a { color: #333333 !important; }
 }

@@ -1,5 +1,5 @@
 /**
- * ARES: The Last Signal - Central Game State Manager
+ * ARES: The Last Signal - Central Game State Manager (v3)
  * 
  * Manages mutable state, initialization factory, seed extraction,
  * and version-safe localStorage persistence.
@@ -24,7 +24,7 @@ export function getInitialSeed() {
 }
 
 /**
- * Factory: Create fresh initial game state
+ * Factory: Create fresh initial game state (v3 schema)
  */
 export function createInitialState(customSeed = null) {
   const seed = customSeed !== null ? customSeed : getInitialSeed();
@@ -33,32 +33,38 @@ export function createInitialState(customSeed = null) {
     saveVersion: GAME_CONSTANTS.SAVE_VERSION,
     seed: seed,
 
-    // Progression
+    // Progression & Day Flow
     sol: 1,
     chapter: 1,
     status: "briefing",               // "briefing" | "active" | "critical_grace" | "interrupted" | "completed"
+    phase: "opening",                 // "opening" | "supply" | "event" | "outcome" | "night"
     currentScreen: "welcome",
     currentTab: "mission",
 
     // Guards & Recovery
     awaitingDecision: false,          // Persistent guard: true when decision card is active
+    supplyDone: false,                // True once morning meal is served for the current sol
     graceUsed: false,                 // True if 1-time emergency triage has been spent
     endingReason: null,               // Reason text for campaign ending or abort
+    crewBreakLastSol: -99,            // Sol of last forced crew break (cooldown: 6 sols)
 
-    // The Exactly Three Core Indicators (0 - 100%)
+    // The Three Outpost Meters (0 - 100%)
     resources: {
       power: GAME_CONSTANTS.STARTING_RESOURCES.power,
       lifeSupport: GAME_CONSTANTS.STARTING_RESOURCES.lifeSupport,
       radiationSafety: GAME_CONSTANTS.STARTING_RESOURCES.radiationSafety
     },
 
+    // Crew Morale (0 - 100, displays face + word, not a percentage bar)
+    morale: GAME_CONSTANTS.STARTING_RESOURCES.morale,
+
     // Communication Subsystem Status
     comm: {
-      status: "blackout",             // "blackout" | "intermittent" | "restored"
+      status: "blackout",             // "blackout" (listen only) | "intermittent" (beacon unlocked Sol 21) | "restored" (Sol 30)
       nextWindowSol: 4                // Sol when next Earth transmission window opens
     },
 
-    // Tracked Mission Objectives (All start false; >= 3 required for Beyond the Silence)
+    // Tracked Mission Objectives (>= 3 required for Beyond the Silence)
     objectives: {
       commsRestored: false,
       antennaAligned: false,
@@ -67,14 +73,18 @@ export function createInitialState(customSeed = null) {
       shelterProtocolsMaintained: false
     },
 
-    // Decision Memory Flags
+    // 5-step antenna repair progression (steps 1, 2, 3 automatic; 4 Sol 21; 5 Sol 30)
+    antennaStep: 0,
+
+    // Meal and Decision History
+    rationHistory: [],                // Array of { sol, choice }
     flags: {},
 
     // Scheduled Events Map: Sol -> Event ID (Deterministic seeded allocation)
     eventSchedule: buildEventSchedule(seed),
 
     // Active Delayed & Ongoing Mechanics
-    pendingEffects: [],               // Delayed effects with triggerSol <= 29
+    pendingEffects: [],               // Delayed effects with relative triggers (triggerSol <= 29)
     modifiers: [],                    // Ongoing per-sol modifiers
 
     // Communication Queues
@@ -82,12 +92,31 @@ export function createInitialState(customSeed = null) {
     commHistory: [],
     latestComm: null,
 
+    // Campaign Stats for Reflection & Endings
+    stats: {
+      fullDays: 0,
+      lightDays: 0,
+      emergencyDays: 0,
+      lowestMorale: GAME_CONSTANTS.STARTING_RESOURCES.morale,
+      lowest: {
+        power: GAME_CONSTANTS.STARTING_RESOURCES.power,
+        lifeSupport: GAME_CONSTANTS.STARTING_RESOURCES.lifeSupport,
+        radiationSafety: GAME_CONSTANTS.STARTING_RESOURCES.radiationSafety
+      }
+    },
+
+    // Post-game Reflection
+    reflection: {
+      answers: {},
+      done: false
+    },
+
     // Audits & Outcome Snapshot
     recentChanges: [
       {
         sol: 1,
         cause: "Outpost Baseline Diagnostics",
-        deltas: { power: 0, lifeSupport: 0, radiationSafety: 0 }
+        deltas: { power: 0, lifeSupport: 0, radiationSafety: 0, morale: 0 }
       }
     ],
     logHistory: [],
@@ -142,6 +171,7 @@ export function loadGameState() {
  */
 export function clearSavedGame() {
   try {
+    if (typeof localStorage === "undefined") return true;
     localStorage.removeItem(GAME_CONSTANTS.SAVE_KEY);
     return true;
   } catch (err) {

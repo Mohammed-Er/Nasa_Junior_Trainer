@@ -1,129 +1,142 @@
 /**
- * ARES: The Last Signal - Complete 30-Sol Campaign Registry
+ * ARES: The Last Signal - 30-Sol Campaign Registry (v3)
  * 
- * Maps all 30 sols across the 5 story chapters:
- * - Chapter 1 (Sols 1–5): The Last Signal
- * - Chapter 2 (Sols 6–12): Alone on Mars
- * - Chapter 3 (Sols 13–18): The Breaking Point
- * - Chapter 4 (Sols 19–25): The Final Attempt
- * - Chapter 5 (Sols 26–30): The Last Five Sols
- * 
- * Includes daily crew mood, rotating in-character dialogues,
- * habitat telemetry checks, and designated event slots.
+ * Maps all 30 sols across the 5 story chapters with kid-friendly writing.
+ * Sentences <= 18 words.
+ * Includes the 3 automatic antenna repair steps (Sols 5, 12, 18)
+ * and the 3 story morale gifts (Sols 10, 17, 26).
  */
 
 export const CAMPAIGN_BEATS = {
-  // --- CHAPTER 1: THE LAST SIGNAL (SOLS 1–5) ---
+  // =========================================================================
+  // CHAPTER 1: THE LAST SIGNAL (SOLS 1–5) · Goal: Find out what broke.
+  // =========================================================================
   1: {
     sol: 1,
     chapter: 1,
-    title: "Autonomous Protocol Engaged",
+    chapterGoal: "Find out what broke.",
+    title: "First Day Cut Off From Earth",
     type: "briefing",
-    crewSpeaker: "Dr. Evelyn Reed",
+    crewSpeaker: "Dr. Hoshi Reed",
     crewRole: "Medical Officer",
-    crewDialogue: "Crew vitals are normal despite the shock of losing the Earth relay. Everyone is resting in their quarters. Let's establish our baseline maintenance before nightfall.",
-    habitatStatus: "Airlock seals pressurized. Water recyclers cycling at 98% efficiency.",
-    crewMood: "Focused & Alert",
+    crewDialogue: "Everyone is resting quietly in their bunks. The storm was loud, but we are all safe.",
+    habitatStatus: "Air and water systems are cycling smoothly.",
+    crewMood: "Calm & Alert",
     hasDecision: false
   },
   2: {
     sol: 2,
     chapter: 1,
-    title: "Routine Dust Sweeping & Soil Analysis",
+    chapterGoal: "Find out what broke.",
+    title: "Morning Systems Inspection",
     type: "routine",
     crewSpeaker: "Dr. Tariq Al-Mansoor",
     crewRole: "Mission Scientist",
-    crewDialogue: "Marcus and I inspected the exterior airlock sensors this morning. Marcus found Martian red dust inside the coffee grinder filter! Spirits are good—we're keeping busy.",
-    habitatStatus: "Battery storage charged to 85%. Thermal heaters holding cabin temperature at a comfortable 21°C.",
-    crewMood: "Optimistic & Cohesive",
+    crewDialogue: "Marcus and I checked the airlock seals this morning. Red dust gets into everything!",
+    habitatStatus: "Batteries charged. Cabin temperature is warm and steady.",
+    crewMood: "Cheerful & Busy",
     hasDecision: false
   },
   3: {
     sol: 3,
     chapter: 1,
-    title: "Event Slot: Sol 03",
+    chapterGoal: "Find out what broke.",
+    title: "Event Slot: Sol 3",
     type: "random_slot",
     hasDecision: true
   },
   4: {
     sol: 4,
     chapter: 1,
-    title: "Post-Vortex Outpost Recalibration",
+    chapterGoal: "Find out what broke.",
+    title: "Cleaning Up After the Dust",
     type: "routine",
     crewSpeaker: "Marcus Vance",
     crewRole: "Systems & Power Engineer",
-    crewDialogue: "Following yesterday's vortex event, all circuit breakers have cooled down. The crew spent the morning running scheduled filter purges.",
-    habitatStatus: "Solar field tracking the morning sun smoothly. Secondary oxygen loop nominal.",
-    crewMood: "Cautious & Relieved",
+    crewDialogue: "All circuit breakers have cooled down nicely. We spent the morning cleaning air filters.",
+    habitatStatus: "Solar panels tracking the sun. Oxygen flow is steady.",
+    crewMood: "Steady & Relieved",
     hasDecision: false
   },
   5: {
     sol: 5,
     chapter: 1,
-    title: "End of Chapter 1: The Highland Survey",
-    type: "routine",
+    chapterGoal: "Find out what broke.",
+    title: "Antenna Inspection: Step 1 Complete",
+    type: "repair_step",
+    antennaStep: 1,
+    repairTitle: "Step 1: Find the damage",
     crewSpeaker: "Commander Elena Rivera",
     crewRole: "Outpost Commander",
-    crewDialogue: "We've survived five sols cut off from Earth. The crew's trust in your command is solid. Tomorrow we begin independent long-range rover traverses.",
-    habitatStatus: "All four habitat pods pressurized. Rover battery placed on trickle charge.",
-    crewMood: "Determined & Ready",
+    crewDialogue: "Marcus climbed the antenna tower outside. He found a bent motor arm and a cracked cable!",
+    habitatStatus: "Antenna damage diagnosed. Spare parts needed.",
+    crewMood: "Determined",
     hasDecision: false
   },
 
-  // --- CHAPTER 2: ALONE ON MARS (SOLS 6–12) ---
+  // =========================================================================
+  // CHAPTER 2: ALONE ON MARS (SOLS 6–12) · Goal: Build the parts.
+  // =========================================================================
   6: {
     sol: 6,
     chapter: 2,
-    title: "Event Slot: Sol 06",
+    chapterGoal: "Build the parts.",
+    title: "Event Slot: Sol 6",
     type: "random_slot",
     hasDecision: true
   },
   7: {
     sol: 7,
     chapter: 2,
-    title: "Habitat Thermal Regulation Check",
+    chapterGoal: "Build the parts.",
+    title: "Cold Wind Outside",
     type: "routine",
     crewSpeaker: "Marcus Vance",
     crewRole: "Systems & Power Engineer",
-    crewDialogue: "Sub-zero winds howling outside the dome, but our insulation jacket is doing its job. Dr. Reed treated minor dry skin from the low cabin humidity.",
-    habitatStatus: "Cabin air humidity at 32%. Thermal heating grid drawing normal baseline load.",
+    crewDialogue: "Cold winds are howling outside our dome. Our thick walls keep us warm.",
+    habitatStatus: "Cabin air humidity is steady. Heaters working normally.",
     crewMood: "Cozy & Focused",
     hasDecision: false
   },
   8: {
     sol: 8,
     chapter: 2,
-    title: "Event Slot: Sol 08",
+    chapterGoal: "Build the parts.",
+    title: "Event Slot: Sol 8",
     type: "random_slot",
     hasDecision: true
   },
   9: {
     sol: 9,
     chapter: 2,
-    title: "Geological Slide Microscopy",
+    chapterGoal: "Build the parts.",
+    title: "Rocks Under the Microscope",
     type: "routine",
     crewSpeaker: "Dr. Tariq Al-Mansoor",
     crewRole: "Mission Scientist",
-    crewDialogue: "The thin-section mineral slides under the optical microscope look breathtaking. Martian basalts show microscopic volcanic gas vesicles from billions of years ago.",
-    habitatStatus: "Spectrometer bench drawing 2% auxiliary power. Primary systems green.",
-    crewMood: "Curious & Absorbed",
+    crewDialogue: "These ancient volcanic rock slices look amazing under the lens! Billions of years old.",
+    habitatStatus: "Science lab drawing low power. All primary meters green.",
+    crewMood: "Curious & Happy",
     hasDecision: false
   },
   10: {
     sol: 10,
     chapter: 2,
-    title: "One-Third Mission Milestone Check",
-    type: "routine",
-    crewSpeaker: "Dr. Evelyn Reed",
+    chapterGoal: "Build the parts.",
+    title: "Milestone Celebration: Sol 10",
+    type: "morale_gift",
+    giftDeltas: { morale: 8 },
+    crewSpeaker: "Dr. Hoshi Reed",
     crewRole: "Medical Officer",
-    crewDialogue: "Ten sols complete, Commander! We did our routine exercise on the cycle ergometers. Cardiovascular metrics are top-notch for all four of us.",
-    habitatStatus: "Cabin carbon dioxide scrubbing at 0.3% partial pressure (well below safety limit).",
-    crewMood: "High Spirits & Energetic",
+    crewDialogue: "Ten sols complete, Commander! We opened a pouch of sweet holiday snacks to celebrate!",
+    habitatStatus: "Crew hearts and lungs in top health. Morale +8!",
+    crewMood: "High Spirits",
     hasDecision: false
   },
   11: {
     sol: 11,
     chapter: 2,
+    chapterGoal: "Build the parts.",
     title: "Event Slot: Sol 11",
     type: "random_slot",
     hasDecision: true
@@ -131,33 +144,40 @@ export const CAMPAIGN_BEATS = {
   12: {
     sol: 12,
     chapter: 2,
-    title: "Pre-Midpoint Diagnostic Run",
-    type: "routine",
-    crewSpeaker: "Commander Elena Rivera",
-    crewRole: "Outpost Commander",
-    crewDialogue: "Tomorrow marks the midpoint of our 30-sol survival mission. Marcus is checking solar flare monitors on the weather mast.",
-    habitatStatus: "All four spacesuit life-support backpacks fully recharged.",
-    crewMood: "Vigilant & Confident",
+    chapterGoal: "Build the parts.",
+    title: "Spare Parts Built: Step 2 Complete",
+    type: "repair_step",
+    antennaStep: 2,
+    repairTitle: "Step 2: Build spare parts",
+    crewSpeaker: "Marcus Vance",
+    crewRole: "Systems & Power Engineer",
+    crewDialogue: "I made a new motor arm from the spare rover motor. It fits great!",
+    habitatStatus: "Antenna replacement gear ready for installation.",
+    crewMood: "Proud & Ready",
     hasDecision: false
   },
 
-  // --- CHAPTER 3: THE BREAKING POINT (SOLS 13–18) ---
+  // =========================================================================
+  // CHAPTER 3: THE BREAKING POINT (SOLS 13–18) · Goal: Survive the solar storm.
+  // =========================================================================
   13: {
     sol: 13,
     chapter: 3,
-    title: "Space Weather Storm Telemetry Alert",
+    chapterGoal: "Survive the solar storm.",
+    title: "Space Weather Alert",
     type: "routine",
     crewSpeaker: "Dr. Tariq Al-Mansoor",
     crewRole: "Mission Scientist",
-    crewDialogue: "Commander, our radiometer is picking up increased high-energy X-ray flux from the Sun. A solar active region just rotated into view.",
-    habitatStatus: "Cosmic ray monitors reporting rising background ionizing flux.",
-    crewMood: "Tense & Prepared",
+    crewDialogue: "Commander, our sensors show energy bursts from the Sun. A storm is coming.",
+    habitatStatus: "Radiation monitors reporting rising background solar energy.",
+    crewMood: "Alert & Focused",
     hasDecision: false
   },
   14: {
     sol: 14,
     chapter: 3,
-    title: "Solar Particle Event (SPE) Storm Alert",
+    chapterGoal: "Survive the solar storm.",
+    title: "Solar Storm Warning",
     type: "story",
     fixedEventId: "evt_solar_particle",
     hasDecision: true
@@ -165,6 +185,7 @@ export const CAMPAIGN_BEATS = {
   15: {
     sol: 15,
     chapter: 3,
+    chapterGoal: "Survive the solar storm.",
     title: "Event Slot: Sol 15",
     type: "random_slot",
     hasDecision: true
@@ -172,44 +193,53 @@ export const CAMPAIGN_BEATS = {
   16: {
     sol: 16,
     chapter: 3,
-    title: "Post-Crisis Habitat Inspection",
+    chapterGoal: "Survive the solar storm.",
+    title: "The Storm Has Passed",
     type: "routine",
     crewSpeaker: "Marcus Vance",
     crewRole: "Systems & Power Engineer",
-    crewDialogue: "The storm has passed. We inspected exterior cable conduits; minor static discharge pitting, but the main power backbone is intact.",
-    habitatStatus: "Radiation safety verified. Air filtration scrubbers purged and online.",
-    crewMood: "Relieved & Resilient",
+    crewDialogue: "The solar storm is finally over. The outer wiring took minor hits, but power is solid.",
+    habitatStatus: "Radiation levels back to safe normal background.",
+    crewMood: "Relieved",
     hasDecision: false
   },
   17: {
     sol: 17,
     chapter: 3,
-    title: "Hydroponics Green Bay Refresh",
-    type: "routine",
-    crewSpeaker: "Dr. Evelyn Reed",
+    chapterGoal: "Survive the solar storm.",
+    title: "Fresh Greenhouse Harvest",
+    type: "morale_gift",
+    giftDeltas: { lifeSupport: 6, morale: 6 },
+    crewSpeaker: "Dr. Hoshi Reed",
     crewRole: "Medical Officer",
-    crewDialogue: "We harvested fresh microgreens from the vertical hydroponic rack today! The crunch of fresh radishes did wonders for crew morale.",
-    habitatStatus: "Hydroponic nutrient reservoirs refilled. Water recovery loop at 95%.",
-    crewMood: "Delighted & Rested",
+    crewDialogue: "We picked crisp fresh radishes and green leaves from our greenhouse bay today!",
+    habitatStatus: "Hydroponic bay thriving. Life Support +6%, Morale +6!",
+    crewMood: "Delighted & Refreshed",
     hasDecision: false
   },
   18: {
     sol: 18,
     chapter: 3,
-    title: "Chapter 3 Wrap-Up: Outpost Survives",
-    type: "routine",
+    chapterGoal: "Survive the solar storm.",
+    title: "Motor Test: Step 3 Complete",
+    type: "repair_step",
+    antennaStep: 3,
+    repairTitle: "Step 3: Test the motor",
     crewSpeaker: "Commander Elena Rivera",
     crewRole: "Outpost Commander",
-    crewDialogue: "Eighteen sols behind us. We survived the hardest multi-system crisis Mars could throw at us. Now, we focus on getting our voice back to Earth.",
-    habitatStatus: "Outpost core integrity holding firm. Preparing communication hardware.",
-    crewMood: "Proud & Determined",
+    crewDialogue: "Marcus bolted the new motor onto the dish and tested it. The dish pivots smoothly!",
+    habitatStatus: "Antenna motor alignment tested and verified.",
+    crewMood: "Confident",
     hasDecision: false
   },
 
-  // --- CHAPTER 4: THE FINAL ATTEMPT (SOLS 19–25) ---
+  // =========================================================================
+  // CHAPTER 4: THE FINAL ATTEMPT (SOLS 19–25) · Goal: Turn the dish toward Earth.
+  // =========================================================================
   19: {
     sol: 19,
     chapter: 4,
+    chapterGoal: "Turn the dish toward Earth.",
     title: "Event Slot: Sol 19",
     type: "random_slot",
     hasDecision: true
@@ -217,19 +247,21 @@ export const CAMPAIGN_BEATS = {
   20: {
     sol: 20,
     chapter: 4,
-    title: "Pre-Antenna Realignment Checklist",
+    chapterGoal: "Turn the dish toward Earth.",
+    title: "Preparing for Alignment",
     type: "routine",
     crewSpeaker: "Marcus Vance",
     crewRole: "Systems & Power Engineer",
-    crewDialogue: "Tomorrow we climb the exterior mast gantry to calibrate the high-gain dish. I'm testing the stepper motor coils right now.",
-    habitatStatus: "Transmitter power capacitors undergoing insulation resistance tests.",
-    crewMood: "Methodical & Steady",
+    crewDialogue: "Tomorrow we aim the dish toward Earth. I am checking the motors today.",
+    habitatStatus: "Transmitter power capacitors fully checked.",
+    crewMood: "Careful & Ready",
     hasDecision: false
   },
   21: {
     sol: 21,
     chapter: 4,
-    title: "High-Gain Antenna Realignment",
+    chapterGoal: "Turn the dish toward Earth.",
+    title: "Turn the Dish Toward Earth",
     type: "story",
     fixedEventId: "evt_antenna_alignment",
     hasDecision: true
@@ -237,7 +269,8 @@ export const CAMPAIGN_BEATS = {
   22: {
     sol: 22,
     chapter: 4,
-    title: "Regolith Berm Reinforcement",
+    chapterGoal: "Turn the dish toward Earth.",
+    title: "Fix the Shield Wall",
     type: "story",
     fixedEventId: "evt_regolith_shielding",
     hasDecision: true
@@ -245,6 +278,7 @@ export const CAMPAIGN_BEATS = {
   23: {
     sol: 23,
     chapter: 4,
+    chapterGoal: "Turn the dish toward Earth.",
     title: "Event Slot: Sol 23",
     type: "random_slot",
     hasDecision: true
@@ -252,44 +286,51 @@ export const CAMPAIGN_BEATS = {
   24: {
     sol: 24,
     chapter: 4,
-    title: "Deep Space Network Listening Watch",
+    chapterGoal: "Turn the dish toward Earth.",
+    title: "Listening to the Stars",
     type: "routine",
-    crewSpeaker: "Dr. Evelyn Reed",
+    crewSpeaker: "Dr. Hoshi Reed",
     crewRole: "Medical Officer",
-    crewDialogue: "We ran radio sweeps across the 8.4 GHz X-band frequencies today. Faint carrier hums, but Earth is slowly moving into line-of-sight.",
-    habitatStatus: "Transmitter dish locked onto azimuth 114°.",
+    crewDialogue: "We ran radio tests today. Earth is slowly moving into our view.",
+    habitatStatus: "Antenna dish held firmly in place.",
     crewMood: "Hopeful & Eager",
     hasDecision: false
   },
   25: {
     sol: 25,
     chapter: 4,
-    title: "Chapter 4 Conclusion: The Final Five Sols Beckon",
+    chapterGoal: "Turn the dish toward Earth.",
+    title: "The Final Five Sols Ahead",
     type: "routine",
     crewSpeaker: "Commander Elena Rivera",
     crewRole: "Outpost Commander",
-    crewDialogue: "Twenty-five sols on Mars. In five days, our primary transmission window opens. Keep your eyes sharp and our systems balanced.",
-    habitatStatus: "All four astronauts cleared medical fitness checks. Systems ready.",
-    crewMood: "Unyielding & United",
+    crewDialogue: "Twenty-five sols complete. In five days, our big transmission window opens!",
+    habitatStatus: "All four astronauts healthy and ready.",
+    crewMood: "United & Focused",
     hasDecision: false
   },
 
-  // --- CHAPTER 5: THE LAST FIVE SOLS (SOLS 26–30) ---
+  // =========================================================================
+  // CHAPTER 5: THE LAST FIVE SOLS (SOLS 26–30) · Goal: Send the signal home.
+  // =========================================================================
   26: {
     sol: 26,
     chapter: 5,
-    title: "The Final Five Sols Begin",
-    type: "routine",
+    chapterGoal: "Send the signal home.",
+    title: "Earth in the Evening Sky",
+    type: "morale_gift",
+    giftDeltas: { morale: 6 },
     crewSpeaker: "Dr. Tariq Al-Mansoor",
     crewRole: "Mission Scientist",
-    crewDialogue: "Earth is rising above the Martian dawn horizon like a brilliant blue beacon. We are compiling our geological findings for transmission.",
-    habitatStatus: "Scientific datasets packaged into compressed telemetry packets.",
-    crewMood: "Inspired & Hopeful",
+    crewDialogue: "Look out the window! Earth is shining like a bright blue star in the twilight sky!",
+    habitatStatus: "Earth clearly visible. Morale +6!",
+    crewMood: "Inspired",
     hasDecision: false
   },
   27: {
     sol: 27,
     chapter: 5,
+    chapterGoal: "Send the signal home.",
     title: "Event Slot: Sol 27",
     type: "random_slot",
     hasDecision: true
@@ -297,31 +338,34 @@ export const CAMPAIGN_BEATS = {
   28: {
     sol: 28,
     chapter: 5,
-    title: "Countdown: 48 Hours to Transmission",
+    chapterGoal: "Send the signal home.",
+    title: "Two Days to Transmission",
     type: "routine",
     crewSpeaker: "Marcus Vance",
     crewRole: "Systems & Power Engineer",
-    crewDialogue: "T-minus 48 hours to the carrier window. I've re-torqued all electrical bus connections. Battery banks are in top shape.",
-    habitatStatus: "High-gain transmitter amplifiers warming up on standby.",
-    crewMood: "Electrified & Ready",
+    crewDialogue: "Just 48 hours to our transmission window. I tightened every wire on the radio dish.",
+    habitatStatus: "Radio amplifiers warmed up and ready on standby.",
+    crewMood: "Excited & Ready",
     hasDecision: false
   },
   29: {
     sol: 29,
     chapter: 5,
-    title: "Eve of the Last Signal",
+    chapterGoal: "Send the signal home.",
+    title: "The Eve of the Signal",
     type: "routine",
     crewSpeaker: "Commander Elena Rivera",
     crewRole: "Outpost Commander",
-    crewDialogue: "Tomorrow is Sol 30. We've weathered dust vortexes, freezing nights, and silence from home. Tomorrow, we fire the carrier signal to Earth.",
-    habitatStatus: "Outpost standing at peak operational readiness.",
+    crewDialogue: "Tomorrow is Sol 30. We made it through storms and cold nights. Tomorrow, we beam home!",
+    habitatStatus: "All outpost systems ready for final broadcast.",
     crewMood: "Unshakable",
     hasDecision: false
   },
   30: {
     sol: 30,
     chapter: 5,
-    title: "The Last Signal to Earth",
+    chapterGoal: "Send the signal home.",
+    title: "The Last Signal",
     type: "story",
     fixedEventId: "evt_final_transmission",
     hasDecision: true

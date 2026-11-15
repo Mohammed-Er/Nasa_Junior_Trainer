@@ -1,16 +1,18 @@
 /**
- * ARES: The Last Signal - Delayed Earth Communication Registry
+ * ARES: The Last Signal - Earth Communication Registry (v3)
  * 
- * Manages queued transmissions from Earth with 1–2 sol latency.
- * Supports stale message conditions and Houston advisory packets.
+ * Manages queued transmissions received from Earth.
+ * Remember: our backup antenna can *listen*, but Earth cannot hear us
+ * until the dish is aligned and beacon unlocked!
+ * Sentences <= 18 words. Easy words.
  */
 
 export const COMM_MESSAGES = [
   {
     id: "msg_initial_handshake",
-    sender: "Flight Director Chen // Houston MCC",
-    subject: "Deep Space Network Telemetry Handshake",
-    body: "ARES-1, we received your autonomous transition beacon. Madrid and Goldstone tracking stations are listening on X-band. Hold system stability and prioritize life support.",
+    sender: "Flight Director Chen · Houston",
+    subject: "We Are Listening for You",
+    body: "ARES-1, our big tracking dishes in California and Spain are listening. Stay calm, protect your air and water, and fix that antenna.",
     sentOnSol: 1,
     deliverOnSol: 3,
     validIf: null,
@@ -18,9 +20,9 @@ export const COMM_MESSAGES = [
   },
   {
     id: "msg_spe_advisory",
-    sender: "Space Weather Bureau // Goddard",
-    subject: "CME Proton Shower Advisory",
-    body: "Solar dynamics observatory reports coronal mass ejection trajectory aligned with Mars. Retreat to underground storm shelters upon detection of particle wavefront.",
+    sender: "Space Weather Desk · NASA Goddard",
+    subject: "Solar Storm Warning Coming Your Way",
+    body: "A solar storm is speeding toward Mars. When alarms buzz, get everyone into the thick shelter.",
     sentOnSol: 12,
     deliverOnSol: 14,
     validIf: null,
@@ -28,9 +30,9 @@ export const COMM_MESSAGES = [
   },
   {
     id: "msg_conjunction_warning",
-    sender: "Orbital Mechanics Desk // JPL",
-    subject: "Solar Conjunction Communication Moratorium",
-    body: "Sun-Mars-Earth alignment entering critical angle. Ionized solar corona will distort RF frequencies. Execute pre-programmed sequences and maintain autonomous command.",
+    sender: "Flight Director Chen · Houston",
+    subject: "Sun Blocking Our Radios Soon",
+    body: "The Sun is moving between Earth and Mars. Radio waves cannot push through hot solar gas. Follow your saved checklists.",
     sentOnSol: 21,
     deliverOnSol: 23,
     validIf: null,
@@ -38,12 +40,12 @@ export const COMM_MESSAGES = [
   },
   {
     id: "msg_final_window",
-    sender: "Deep Space Network // Goldstone Array",
-    subject: "Final Carrier Window Schedule - Sol 30",
-    body: "Final Earth alignment window verified for Sol 30, 14:00 UTC. Ensure 3.2m high-gain dish is calibrated to azimuth 114° and transmitter capacitors are energized.",
+    sender: "Deep Space Network · Goldstone Station",
+    subject: "Sol 30 Final Broadcast Window",
+    body: "The rescue ship is waiting for your signal! Point your dish toward Earth on Sol 30. We are ready to receive your carrier wave.",
     sentOnSol: 28,
     deliverOnSol: 30,
     validIf: "antenna_aligned",
-    staleVariant: "WARNING: Telemetry indicates high-gain antenna azimuth unverified. Realign dish immediately before attempting Sol 30 carrier broadcast."
+    staleVariant: "WARNING: We cannot detect your dish beacon! Make sure your antenna is aimed toward Earth before Sol 30!"
   }
 ];
