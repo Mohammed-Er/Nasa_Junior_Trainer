@@ -298,6 +298,18 @@ export function renderJournalScreen(containerEl, state) {
           </div>
         </section>
 
+        <!-- Mission Objectives Checklist -->
+        <section class="journal-objectives-summary" style="margin: 1rem 0; padding: 0.85rem; background: rgba(15, 23, 42, 0.4); border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.2);">
+          <h3 style="font-size: 0.95rem; color: #38bdf8; margin: 0 0 0.5rem 0;">Mission Objectives (${Object.values(state.objectives || {}).filter(Boolean).length} of 5 Completed)</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.4rem; font-size: 0.85rem; color: #f1f5f9;">
+            <div>${state.objectives?.commsRestored ? "✅" : "❌"} 📡 Earth Radio Restored</div>
+            <div>${state.objectives?.antennaAligned ? "✅" : "❌"} 🛰️ Antenna Aligned</div>
+            <div>${state.objectives?.researchSamples ? "✅" : "❌"} 🔬 Frost Samples Saved</div>
+            <div>${state.objectives?.panelsUnderstood ? "✅" : "❌"} ☀️ Solar Dust Physics</div>
+            <div>${state.objectives?.shelterProtocolsMaintained ? "✅" : "❌"} 🛡️ Storm Shelter Held</div>
+          </div>
+        </section>
+
         <section class="journal-meals-summary">
           <h3>Ration History</h3>
           <p>Full Meals: <strong>${fullMeals}</strong> sols · Half Meals: <strong>${halfMeals}</strong> sols · Snack Bars: <strong>${snackMeals}</strong> sols (Total: ${totalMeals} sols)</p>

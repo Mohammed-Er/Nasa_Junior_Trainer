@@ -940,9 +940,74 @@ export function showEndingScreen(ending) {
   const valPEl = document.getElementById("ending-val-power");
   const valLsEl = document.getElementById("ending-val-ls");
   const valRadEl = document.getElementById("ending-val-rad");
+  const valMoraleEl = document.getElementById("ending-val-morale");
   if (valPEl) valPEl.textContent = `${state.resources.power}%`;
   if (valLsEl) valLsEl.textContent = `${state.resources.lifeSupport}%`;
   if (valRadEl) valRadEl.textContent = `${state.resources.radiationSafety}%`;
+  if (valMoraleEl) valMoraleEl.textContent = `${state.morale ?? 80}`;
+
+  // 5 Tracked Mission Objectives Checklist
+  const objList = [
+    {
+      key: "commsRestored",
+      icon: "📡",
+      title: "Earth Radio Link Restored",
+      desc: "Sol 30 data packet successfully transmitted 225M km back to Houston."
+    },
+    {
+      key: "antennaAligned",
+      icon: "🛰️",
+      title: "High-Gain Antenna Aligned",
+      desc: "Rebuilt drive motor and locked onto Earth's orbital coordinate window."
+    },
+    {
+      key: "researchSamples",
+      icon: "🔬",
+      title: "Martian Frost Samples Collected",
+      desc: "Gathered rock sublimation frost samples before morning solar evaporation."
+    },
+    {
+      key: "panelsUnderstood",
+      icon: "☀️",
+      title: "Solar Dust Physics Understood",
+      desc: "Studied electrostatic dust adhesion to optimize solar panel cleaning."
+    },
+    {
+      key: "shelterProtocolsMaintained",
+      icon: "🛡️",
+      title: "Solar Storm Core Shelter",
+      desc: "Safely sheltered crew in the reinforced core during the Sol 14 storm."
+    }
+  ];
+
+  const objContainer = document.getElementById("ending-objectives-list");
+  const countBadge = document.getElementById("ending-objectives-count");
+  const completedCount = objList.filter((o) => !!state.objectives?.[o.key]).length;
+
+  if (countBadge) {
+    countBadge.textContent = `Completed: ${completedCount} / 5`;
+    countBadge.className = `tag ${completedCount >= 3 ? "tag-optimal" : completedCount >= 1 ? "tag-caution" : "tag-critical"}`;
+  }
+
+  if (objContainer) {
+    objContainer.innerHTML = objList
+      .map((o) => {
+        const isDone = !!state.objectives?.[o.key];
+        return `
+          <div class="ending-obj-item ${isDone ? "is-complete" : "is-missed"}" style="display:flex; align-items:flex-start; gap:0.75rem; padding:0.65rem 0.85rem; border-radius:8px; background:${isDone ? "rgba(16, 185, 129, 0.12)" : "rgba(239, 68, 68, 0.08)"}; border:1px solid ${isDone ? "rgba(16, 185, 129, 0.35)" : "rgba(239, 68, 68, 0.25)"}; margin-bottom:0.5rem;">
+            <span style="font-size:1.3rem; line-height:1;">${isDone ? "✅" : "❌"}</span>
+            <div style="flex-grow:1;">
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.25rem;">
+                <strong style="color:${isDone ? "#6ee7b7" : "#fca5a5"}; font-size:0.95rem;">${o.icon} ${o.title}</strong>
+                <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; color:${isDone ? "#34d399" : "#f87171"};">${isDone ? "COMPLETED" : "MISSED"}</span>
+              </div>
+              <p style="font-size:0.85rem; color:#cbd5e1; margin:0.2rem 0 0 0;">${o.desc}</p>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+  }
 
   // Button to reflection
   const reflBtn = document.getElementById("btn-to-reflection");
