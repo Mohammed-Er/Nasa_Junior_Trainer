@@ -905,6 +905,7 @@ function renderNightReport() {
  */
 export function showEndingScreen(ending) {
   state.lastEnding = ending;
+  state.status = "completed";
   saveGameState(state);
 
   showScreen("ending");

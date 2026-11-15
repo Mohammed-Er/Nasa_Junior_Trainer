@@ -263,7 +263,9 @@ export function initDevTools({
   // Endings
   panel.querySelector("#btn-dev-end-1").addEventListener("click", () => {
     const state = getState();
-    state.resources = { power: 60, lifeSupport: 60, radiationSafety: 60 };
+    state.sol = 30;
+    state.status = "completed";
+    state.resources = { power: 65, lifeSupport: 60, radiationSafety: 60 };
     state.morale = 75;
     state.objectives = { commsRestored: true, antennaAligned: true, researchSamples: true, panelsUnderstood: true, shelterProtocolsMaintained: true };
     const ending = evaluateMissionEnding(state);
@@ -271,6 +273,8 @@ export function initDevTools({
   });
   panel.querySelector("#btn-dev-end-2").addEventListener("click", () => {
     const state = getState();
+    state.sol = 30;
+    state.status = "completed";
     state.resources = { power: 25, lifeSupport: 25, radiationSafety: 25 };
     state.morale = 30;
     state.objectives = { commsRestored: true, antennaAligned: true, researchSamples: false, panelsUnderstood: false, shelterProtocolsMaintained: false };
@@ -279,8 +283,12 @@ export function initDevTools({
   });
   panel.querySelector("#btn-dev-end-3").addEventListener("click", () => {
     const state = getState();
-    state.status = "interrupted";
-    state.endingReason = "Developer triggered simulation abort.";
+    state.sol = 30;
+    state.status = "completed";
+    state.resources = { power: 12, lifeSupport: 14, radiationSafety: 15 };
+    state.morale = 20;
+    state.objectives = { commsRestored: false, antennaAligned: false, researchSamples: false, panelsUnderstood: false, shelterProtocolsMaintained: false };
+    state.endingReason = "Resource reserves dropped below critical thresholds and Earth communication could not be restored before orbital alignment closed. Automated safety computers sealed the habitat in emergency sleep mode until the next launch window.";
     const ending = evaluateMissionEnding(state);
     if (showEnding) showEnding(ending);
   });
@@ -316,6 +324,10 @@ export function initDevTools({
       if (startDayPhase) startDayPhase("event", eventId);
     },
     setResources: (deltas) => adjust(deltas),
+    showEnding: (code = 1) => {
+      const btn = panel.querySelector(`#btn-dev-end-${code}`);
+      if (btn) btn.click();
+    },
     reset: () => {
       clearSavedGame();
       window.location.reload();
